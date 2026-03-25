@@ -1,0 +1,12 @@
+# Ignorer tous les fichiers dans le dossier uploads
+uploads/*
+
+# Sauf le fichier .gitkeep pour que le dossier soit quand même présent sur Git
+!uploads/.gitkeep
+
+# Ignorer les fichiers système (Mac/Windows)
+.DS_Store
+Thumbs.db
+
+# Ignorer les logs d'erreurs PHP si présents
+*.log

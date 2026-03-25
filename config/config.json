@@ -1,0 +1,8 @@
+{
+    "app_name": "Spokeman Music Datamind ",
+    "version": "0.4.1",
+    "favicon_url": "img/favicon.svg",
+    "settings": {
+        "max_upload_size": "20M"
+    }
+}

@@ -1,0 +1,199 @@
+/* ==========================================================================
+   CONFIG & VARIABLES
+   css/admin.css
+   ========================================================================== */
+:root {
+    --backdrop-bg: 0, 0, 0;
+    --backdrop-opacity: 0.85;
+    --modal-bg: #ffffff;
+    --modal-radius: 12px;
+    --modal-shadow: 0 25px 70px rgba(0,0,0,0.5);
+    --primary: #0d6efd;
+    --dark: #333;
+    --muted: #6c757d;
+    --light-gray: #f8f9fa;
+    --border-color: #dee2e6;
+    --nav-btn-size: 50px;
+}
+
+/* --- FORCE DESKTOP --- */
+html, body {
+    min-width: 1100px;
+    min-height: 100vh;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+}
+
+.main-wrapper {
+    flex: 1;
+}
+
+/* --- UTILITAIRES --- */
+.hidden { display: none !important; }
+
+/* --- OVERLAY MODALE --- */
+.modal-backdrop.show {
+    background-color: rgb(var(--backdrop-bg));
+    opacity: var(--backdrop-opacity) !important;
+}
+
+/* --- ACCORDÉON & DOSSIERS --- */
+.accordion-item { 
+    border: none !important; 
+    border-radius: 8px !important; 
+    overflow: hidden; 
+    background: transparent;
+}
+
+.accordion-header {
+    border: 1px solid var(--border-color);
+    border-radius: 8px !important;
+}
+
+.folder-rename-input { 
+    font-weight: bold; 
+    color: var(--muted);
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    letter-spacing: 0.05rem;
+    border: none; 
+    background: transparent; 
+    width: auto; 
+    padding: 2px 5px;
+    transition: all 0.2s;
+}
+
+.folder-rename-input:focus {
+    outline: none;
+    color: var(--primary);
+    background: rgba(13, 110, 253, 0.05);
+}
+
+/* --- FICHIERS & VIGNETTES --- */
+.file-item {
+    transition: background 0.15s ease;
+}
+
+.file-item:hover {
+    background-color: #fcfdfe !important;
+}
+
+.thumb-preview { 
+    width: 50px; height: 50px; object-fit: cover; border-radius: 6px; 
+    cursor: zoom-in; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
+}
+.thumb-preview:hover { transform: scale(1.1); }
+
+.icon-preview { 
+    width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; 
+    background: var(--light-gray); border-radius: 6px; font-size: 0.65rem; font-weight: bold; 
+    border: 1px solid var(--border-color); color: var(--muted); cursor: zoom-in;
+}
+
+.rename-input { 
+    border: none; 
+    border-bottom: 1px dashed transparent; 
+    background: transparent; 
+    font-size: 0.9rem; 
+    width: 100%; 
+}
+.rename-input:focus { outline: none; border-bottom-color: var(--primary); background: #fff; }
+
+.btn-save { 
+    opacity: 0; transition: opacity 0.2s; border: none; background: none; cursor: pointer; 
+}
+.file-item:hover .btn-save, .accordion-header:hover .btn-save { opacity: 1; }
+
+/* --- BOUTON COPIE MINIMALISTE --- */
+.btn-copy-minimal {
+    background: none;
+    border: none;
+    padding: 2px 6px;
+    color: var(--muted);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    transition: color 0.2s;
+}
+
+.btn-copy-minimal:hover {
+    color: var(--primary);
+}
+
+/* --- TAGS & MULTI-SELECT --- */
+.tag-checkbox-container {
+    background-color: rgba(0, 0, 0, 0.02);
+    border-radius: 4px;
+    padding: 6px 10px !important;
+}
+
+.tag-check-item {
+    position: relative;
+    display: inline-block;
+}
+
+.tag-input-checkbox {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0; width: 0;
+}
+
+.tag-label-checkbox {
+    font-size: 0.65rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background: #ffffff;
+    color: #6c757d;
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border-color);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+    display: inline-block;
+}
+
+.tag-input-checkbox:checked + .tag-label-checkbox {
+    background-color: var(--primary);
+    border-color: var(--primary);
+    color: #ffffff;
+}
+
+/* --- MODALE SLIDER --- */
+.modal-content { border-radius: var(--modal-radius); border: none; box-shadow: var(--modal-shadow); }
+#modalMediaContent img, #modalMediaContent video { 
+    max-width: 100%; max-height: 70vh; border-radius: 4px; 
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: modalFadeIn 0.3s ease-out;
+}
+
+@keyframes modalFadeIn { 
+    from { opacity: 0; transform: scale(0.95); } 
+    to { opacity: 1; transform: scale(1); } 
+}
+
+.nav-btn { 
+    position: absolute; top: 50%; transform: translateY(-50%); 
+    background: white; border-radius: 50%; width: var(--nav-btn-size); height: var(--nav-btn-size); 
+    display: flex; align-items: center; justify-content: center; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 2000; border: none;
+    transition: all 0.2s;
+}
+.nav-btn:hover { background: var(--light-gray); transform: translateY(-50%) scale(1.1); }
+
+.nav-prev { left: -75px; }
+.nav-next { right: -75px; }
+
+@media (max-width: 1300px) {
+    .nav-prev { left: 15px; }
+    .nav-next { right: 15px; }
+}
+
+/* --- SCROLLBAR --- */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #999; }
