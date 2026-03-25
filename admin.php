@@ -243,24 +243,7 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
         </div>
     </div>
 
-    <div class="modal fade" id="previewModal" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-lg">
-            <div class="modal-content shadow-lg border-0 bg-white">
-                <button type="button" class="nav-btn nav-prev" onclick="changeMedia(-1, event)">❮</button>
-                <button type="button" class="nav-btn nav-next" onclick="changeMedia(1, event)">❯</button>
-                <div class="modal-header border-0 pb-0"><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
-                <div class="modal-body text-center" id="modalMediaContent"></div>
-                <div class="text-center pb-3 px-3 d-flex flex-wrap justify-content-center gap-2">
-                    <button class="btn btn-sm btn-dark px-3" id="modalCopyBtn" onclick="modalCopyAction()">📋 Copier l'URL</button>
-                    <form method="post" id="modalDeleteForm">
-                        <input type="hidden" name="file_path" id="modalDeletePath">
-                        <button name="delete_file" onclick="return confirm('Supprimer ?')" class="btn btn-sm btn-danger px-3">🗑️ Supprimer</button>
-                    </form>
-                </div>
-                <div class="modal-footer border-0 pt-0 justify-content-center small text-muted fw-bold" id="modalFileName"></div>
-            </div>
-        </div>
-    </div>
+    <?php include 'admin-modal.php'; ?>
 
     <?php include 'footer.php'; ?>
 
