@@ -16,7 +16,6 @@
     --folder-color: #ffca28;
 }
 
-/* CONFIG DESKTOP & LAYOUT */
 html, body { 
     min-height: 100vh; 
     display: flex; 
@@ -27,16 +26,14 @@ html, body {
 
 .main-content { flex: 1; }
 
-/* NAVBAR CUSTOM */
-.navbar { background-color: var(--primary) !important; }
-
-/* CARTES (SETS & MÉDIAS) */
+/* CARTES */
 .media-card { 
-    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s; 
+    transition: transform 0.2s ease, box-shadow 0.2s; 
     border: 1px solid var(--border-color) !important;
     border-radius: var(--modal-radius);
     overflow: hidden;
     background: #fff;
+    cursor: pointer;
 }
 
 .media-card:hover { 
@@ -44,47 +41,18 @@ html, body {
     box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; 
 }
 
-.folder-icon { 
-    font-size: 3.5rem; 
-    color: var(--folder-color); 
-    margin-bottom: 5px;
-}
+.folder-icon { font-size: 3.5rem; color: var(--folder-color); }
 
-.badge-folder {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    z-index: 5;
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-}
-
-/* BOUTON ZIP (APPARAIT AU SURVOL) */
+/* BOUTON ZIP */
 .download-zip {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 10;
-    opacity: 0;
-    transition: all 0.2s ease;
-    background: #fff;
-    border: 1px solid var(--border-color);
-    border-radius: 6px;
-    padding: 3px 8px;
-    text-decoration: none;
-    font-size: 0.7rem;
-    color: var(--primary);
-    font-weight: bold;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    position: absolute; top: 10px; right: 10px; z-index: 10; opacity: 0;
+    transition: all 0.2s ease; background: #fff; border: 1px solid var(--border-color);
+    border-radius: 6px; padding: 3px 8px; font-size: 0.7rem; color: var(--primary);
+    font-weight: bold; text-decoration: none;
 }
-
 .media-card:hover .download-zip { opacity: 1; }
-.download-zip:hover { background: var(--primary); color: #fff !important; }
 
-/* ==========================================================================
-   MODALE & GALERIE (BACKDROP CUSTOM)
-   ========================================================================== */
+/* MODALE BACKDROP */
 .modal-backdrop.show {
     background-color: rgb(var(--backdrop-bg)) !important;
     opacity: var(--backdrop-opacity) !important;
@@ -94,47 +62,48 @@ html, body {
     border: none;
     border-radius: var(--modal-radius);
     box-shadow: var(--modal-shadow);
-    background-color: var(--modal-bg);
 }
 
-/* BOUTONS DE NAVIGATION ❮ ❯ */
+/* NAVIGATION */
 .nav-btn {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
     width: var(--nav-btn-size);
     height: var(--nav-btn-size);
-    background: rgba(255, 255, 255, 0.15);
+    background: rgba(255, 255, 255, 0.2);
     color: #fff;
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 50%;
-    font-size: 1.2rem;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s;
-    z-index: 2000;
+    z-index: 2000 !important;
     backdrop-filter: blur(5px);
+    transition: all 0.2s;
+    cursor: pointer;
+    pointer-events: auto !important;
 }
 
-.nav-btn:hover {
-    background: rgba(255, 255, 255, 0.3);
-    scale: 1.1;
-    color: #fff;
-}
+.nav-btn:hover { background: rgba(255, 255, 255, 0.4); scale: 1.1; color: #fff; }
+.nav-prev { left: -70px; }
+.nav-next { right: -70px; }
 
-.nav-prev { left: -80px; }
-.nav-next { right: -80px; }
-
-/* Responsive flèches */
 @media (max-width: 1100px) {
-    .nav-prev { left: 15px; }
-    .nav-next { right: 15px; }
-    .nav-btn { background: rgba(0, 0, 0, 0.5); }
+    .nav-prev { left: 10px; }
+    .nav-next { right: 10px; }
+    .nav-btn { background: rgba(0,0,0,0.5); }
+}
+
+/* TAGS */
+#modalTagDisplay .badge {
+    transition: all 0.2s;
+}
+#modalTagDisplay .badge:hover {
+    background-color: var(--primary) !important;
+    color: white !important;
 }
 
 /* SCROLLBAR */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: var(--light-gray); }
 ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #999; }

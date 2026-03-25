@@ -18,7 +18,7 @@ let currentIndex = 0;
 function initGallery(cardElement) {
     // On récupère uniquement les items du conteneur parent (Set ou Résultats de recherche)
     const container = cardElement.closest('.row');
-    const allVisibleCards = Array.from(container.querySelectorAll('.media-card'));
+    const allVisibleCards = Array.from(container.querySelectorAll('.media-card[data-path]'));
     
     currentGallery = allVisibleCards.map(el => ({ 
         path: el.dataset.path, 
@@ -40,7 +40,7 @@ function updateModal() {
     const item = currentGallery[currentIndex];
     if(!item) return;
 
-    // Reset du contenu et des specs
+    // Reset
     modalContent.innerHTML = '';
     modalMediaSpecs.innerHTML = '<span class="opacity-50">Chargement...</span>';
     
@@ -56,26 +56,18 @@ function updateModal() {
     const videoExts = ['mp4', 'webm', 'mov'];
 
     if (imgExts.includes(item.ext)) {
-        const img = new Image();
-        img.src = item.path;
-        img.className = "img-fluid shadow rounded";
-        img.style.maxHeight = "70vh";
+        modalContent.innerHTML = `<img src="${item.path}" class="img-fluid shadow rounded" style="max-height:70vh;" id="modalImg">`;
+        const img = document.getElementById('modalImg');
         img.onload = function() {
-            // Récupération du poids via Fetch
             fetch(item.path).then(r => r.blob()).then(blob => {
                 const size = (blob.size / 1024).toFixed(1) + ' KB';
                 modalMediaSpecs.innerHTML = `${img.naturalWidth}x${img.naturalHeight} px | ${size}`;
             });
         };
-        modalContent.appendChild(img);
     } 
     else if (videoExts.includes(item.ext)) {
-        const video = document.createElement('video');
-        video.src = item.path;
-        video.controls = true;
-        video.autoplay = true;
-        video.className = "w-100 shadow rounded";
-        video.style.maxHeight = "70vh";
+        modalContent.innerHTML = `<video src="${item.path}" controls autoplay class="w-100 shadow rounded" style="max-height:70vh;" id="modalVid"></video>`;
+        const video = document.getElementById('modalVid');
         video.onloadedmetadata = function() {
             fetch(item.path).then(r => r.blob()).then(blob => {
                 const size = (blob.size / (1024 * 1024)).toFixed(2) + ' MB';
@@ -83,7 +75,6 @@ function updateModal() {
                 modalMediaSpecs.innerHTML = `Vidéo | ${duration} | ${size}`;
             });
         };
-        modalContent.appendChild(video);
     } 
     else {
         modalContent.innerHTML = `
@@ -95,27 +86,27 @@ function updateModal() {
         modalMediaSpecs.innerHTML = "Document";
     }
 
-    // Affichage des tags en mode lecture seule
     displayModalTags(item.path);
 }
 
 /**
- * Affiche les badges de tags dans la modale
+ * Affiche les badges de tags (Correction du sélecteur parent)
  */
 function displayModalTags(filePath) {
-    const cardOrigin = document.querySelector(`.media-card[data-path="${filePath}"]`);
     const tagDisplay = document.getElementById('modalTagDisplay');
     const tagContainer = document.getElementById('modalTagsContainer');
     
-    if (!cardOrigin || !tagDisplay) return;
+    const card = document.querySelector(`.media-card[data-path="${filePath}"]`);
+    if (!card || !tagDisplay || !tagContainer) return;
 
-    const tagsAttr = cardOrigin.closest('.media-item').dataset.tags;
-    
-    if (tagsAttr && tagsAttr.trim() !== "") {
+    const parentItem = card.closest('.media-item');
+    const tagsAttr = parentItem ? parentItem.getAttribute('data-tags') : '';
+    const tagsArray = tagsAttr ? tagsAttr.split(' ').filter(t => t.trim() !== "") : [];
+
+    if (tagsArray.length > 0) {
         tagContainer.classList.remove('d-none');
-        const tagsArray = tagsAttr.split(' ');
         tagDisplay.innerHTML = tagsArray.map(t => 
-            `<span class="badge rounded-pill bg-secondary fw-normal" style="font-size:0.7rem">#${t}</span>`
+            `<span class="badge rounded-pill bg-primary bg-opacity-10 text-primary border border-primary border-opacity-25 fw-normal px-2 py-1" style="font-size:0.7rem;">#${t}</span>`
         ).join('');
     } else {
         tagContainer.classList.add('d-none');
@@ -123,10 +114,13 @@ function displayModalTags(filePath) {
 }
 
 /**
- * Navigation entre médias
+ * Navigation (Correction : évite la fermeture de la modale)
  */
 function changeMedia(direction, event) {
-    if(event) { event.preventDefault(); event.stopPropagation(); }
+    if(event) { 
+        event.preventDefault(); 
+        event.stopPropagation(); 
+    }
     if (currentGallery.length <= 1) return;
     
     currentIndex += direction;
@@ -137,7 +131,7 @@ function changeMedia(direction, event) {
 }
 
 /**
- * Action Copier l'URL
+ * Action Copier
  */
 function modalCopyAction() {
     const url = modalCopyBtn.dataset.copyUrl;
@@ -157,15 +151,11 @@ function modalCopyAction() {
  */
 document.addEventListener('keydown', (e) => {
     if (!previewModalElement.classList.contains('show')) return;
-    
     if (e.key === "ArrowRight") changeMedia(1);
     if (e.key === "ArrowLeft") changeMedia(-1);
     if (e.key === "Escape") previewModal.hide();
 });
 
-/**
- * Nettoyage à la fermeture (Arrêt vidéo)
- */
 previewModalElement.addEventListener('hidden.bs.modal', () => {
     modalContent.innerHTML = '';
 });

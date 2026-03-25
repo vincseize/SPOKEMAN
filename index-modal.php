@@ -13,7 +13,8 @@
             <div class="modal-body text-center">
                 <div id="modalMediaContent" class="mb-3"></div>
                 
-                <div id="modalTagsContainer" class="p-2 bg-light rounded mb-3 d-none">
+                <div id="modalTagsContainer" class="p-2 bg-light rounded mb-3 d-none border-top border-bottom">
+                    <div class="small text-muted mb-1" style="font-size: 0.6rem; text-transform: uppercase; opacity: 0.6;">Tags</div>
                     <div id="modalTagDisplay" class="d-flex flex-wrap justify-content-center gap-2"></div>
                 </div>
             </div>
