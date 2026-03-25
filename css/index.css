@@ -1,64 +1,140 @@
-/* CONFIG DESKTOP ONLY */
+/* ==========================================================================
+   CONFIG & VARIABLES
+   ========================================================================== */
+:root {
+    --backdrop-bg: 0, 0, 0;
+    --backdrop-opacity: 0.85;
+    --modal-bg: #ffffff;
+    --modal-radius: 12px;
+    --modal-shadow: 0 25px 70px rgba(0,0,0,0.5);
+    --primary: #0d6efd;
+    --dark: #333;
+    --muted: #6c757d;
+    --light-gray: #f8f9fa;
+    --border-color: #dee2e6;
+    --nav-btn-size: 50px;
+    --folder-color: #ffca28;
+}
+
+/* CONFIG DESKTOP & LAYOUT */
 html, body { 
-    min-width: 1024px; 
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
+    min-height: 100vh; 
+    display: flex; 
+    flex-direction: column; 
+    background-color: var(--light-gray);
+    color: var(--dark);
 }
 
 .main-content { flex: 1; }
 
-/* CARTES (FOLDERS & MEDIA) */
+/* NAVBAR CUSTOM */
+.navbar { background-color: var(--primary) !important; }
+
+/* CARTES (SETS & MÉDIAS) */
 .media-card { 
-    transition: transform 0.2s; 
-    border: none; 
-    overflow: hidden; 
-    position: relative;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s; 
+    border: 1px solid var(--border-color) !important;
+    border-radius: var(--modal-radius);
+    overflow: hidden;
+    background: #fff;
 }
 
-.media-card:hover { transform: translateY(-5px); }
-
-.folder-icon { font-size: 3.5rem; color: #ffca28; }
-
-video, img { border-radius: 8px 8px 0 0; }
-
-.badge-folder { 
-    position: absolute; 
-    top: 10px; 
-    right: 10px; 
-    font-size: 0.7rem; 
+.media-card:hover { 
+    transform: translateY(-5px); 
+    box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; 
 }
 
-/* BOUTON ZIP SUR FOLDERS */
+.folder-icon { 
+    font-size: 3.5rem; 
+    color: var(--folder-color); 
+    margin-bottom: 5px;
+}
+
+.badge-folder {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 5;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* BOUTON ZIP (APPARAIT AU SURVOL) */
 .download-zip {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 10px;
+    right: 10px;
     z-index: 10;
-    opacity: 0; /* Caché par défaut */
+    opacity: 0;
     transition: all 0.2s ease;
-    background: rgba(255, 255, 255, 0.9);
-    border: 1px solid #dee2e6;
+    background: #fff;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
-    padding: 2px 8px;
+    padding: 3px 8px;
     text-decoration: none;
     font-size: 0.7rem;
-    color: #0d6efd;
+    color: var(--primary);
     font-weight: bold;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.media-card:hover .download-zip { 
-    opacity: 1; /* Apparaît au survol de la carte */
+.media-card:hover .download-zip { opacity: 1; }
+.download-zip:hover { background: var(--primary); color: #fff !important; }
+
+/* ==========================================================================
+   MODALE & GALERIE (BACKDROP CUSTOM)
+   ========================================================================== */
+.modal-backdrop.show {
+    background-color: rgb(var(--backdrop-bg)) !important;
+    opacity: var(--backdrop-opacity) !important;
 }
 
-.download-zip:hover { 
-    background: #0d6efd; 
-    color: white !important; 
+.modal-content {
+    border: none;
+    border-radius: var(--modal-radius);
+    box-shadow: var(--modal-shadow);
+    background-color: var(--modal-bg);
 }
 
-/* SCROLLBAR DESKTOP */
+/* BOUTONS DE NAVIGATION ❮ ❯ */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: var(--nav-btn-size);
+    height: var(--nav-btn-size);
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    z-index: 2000;
+    backdrop-filter: blur(5px);
+}
+
+.nav-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    scale: 1.1;
+    color: #fff;
+}
+
+.nav-prev { left: -80px; }
+.nav-next { right: -80px; }
+
+/* Responsive flèches */
+@media (max-width: 1100px) {
+    .nav-prev { left: 15px; }
+    .nav-next { right: 15px; }
+    .nav-btn { background: rgba(0, 0, 0, 0.5); }
+}
+
+/* SCROLLBAR */
 ::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-track { background: var(--light-gray); }
 ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
 ::-webkit-scrollbar-thumb:hover { background: #999; }
