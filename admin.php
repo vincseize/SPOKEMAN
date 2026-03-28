@@ -224,6 +224,8 @@ include_once 'admin-header.php';
     </div>
 </div>
 
+<?php include 'footer.php'; ?>
+
 <!-- Modale -->
 <?php if(file_exists('admin-modal.php')) include 'admin-modal.php'; ?>
 

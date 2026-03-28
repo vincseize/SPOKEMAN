@@ -7,18 +7,17 @@
         <div class="modal-content shadow-lg border-0 bg-white">
             <div class="modal-header">
                 <div class="small text-muted fw-bold d-flex align-items-center" id="modalFileName">
-                    </div>
+                </div>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
             </div>
 
             <div class="modal-body text-center">
                 <div id="modalMediaContent" class="mb-3">
-                    </div>
+                </div>
                 
                 <div id="modalTagsContainer" class="d-none">
-                    
-                    <div id="modalTagDisplay">
-                        </div>
+                    <div id="modalTagDisplay" class="d-flex flex-wrap gap-2 justify-content-center">
+                    </div>
                 </div>
             </div>
 
@@ -35,7 +34,7 @@
                         </div>
                         <div class="col-6 text-end">
                             <div id="modalMediaSpecs" class="font-monospace">
-                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>

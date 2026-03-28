@@ -60,14 +60,19 @@ function updateModal() {
         modalContent.innerHTML = `<video src="${item.path}" controls autoplay class="w-100 shadow rounded" style="max-height:70vh;"></video>`;
     }
 
-    // Gestion des TAGS
+    // Gestion des TAGS AVEC COULEURS
     const tagsRaw = (item.tags || "").trim();
     if (tagsRaw !== "") {
         modalTagsContainer.classList.remove('d-none');
         const tagsArray = tagsRaw.split(/\s+/);
-        modalTagDisplay.innerHTML = tagsArray.map(t => 
-            `<span class="badge">#${t}</span>`
-        ).join('');
+        
+        // Récupérer les couleurs depuis window.tagColors (injecté depuis PHP)
+        const tagColors = window.tagColors || {};
+        
+        modalTagDisplay.innerHTML = tagsArray.map(tag => {
+            const tagColor = tagColors[tag] || '#0d6efd';
+            return `<span class="badge" style="background: ${tagColor}; color: white; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px;">#${tag}</span>`;
+        }).join('');
     } else {
         modalTagsContainer.classList.add('d-none');
         modalTagDisplay.innerHTML = '';
@@ -131,4 +136,39 @@ document.addEventListener('keydown', (e) => {
  */
 previewModalElement.addEventListener('hidden.bs.modal', () => {
     modalContent.innerHTML = '';
+});
+
+// ===== GESTION DES CHECKBOXES DES DOSSIERS DANS LA GALERIE =====
+document.addEventListener('DOMContentLoaded', function() {
+    // Sélectionner les boutons
+    const selectAllFoldersBtn = document.getElementById('selectAllFoldersGal');
+    const deselectAllFoldersBtn = document.getElementById('deselectAllFoldersGal');
+    
+    // Fonction pour cocher/décocher toutes les checkboxes
+    function setAllCheckboxes(checked) {
+        document.querySelectorAll('.folder-select-checkbox-gal').forEach(cb => {
+            cb.checked = checked;
+        });
+        console.log(checked ? "Tous les dossiers sélectionnés" : "Aucun dossier sélectionné");
+    }
+    
+    // Bouton "Tout"
+    if (selectAllFoldersBtn) {
+        selectAllFoldersBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            setAllCheckboxes(true);
+        });
+    }
+    
+    // Bouton "Aucun"
+    if (deselectAllFoldersBtn) {
+        deselectAllFoldersBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            setAllCheckboxes(false);
+        });
+    }
+    
+    // Vérification du nombre de checkboxes trouvées
+    const checkboxes = document.querySelectorAll('.folder-select-checkbox-gal');
+    console.log(`Checkboxes trouvées dans la galerie: ${checkboxes.length}`);
 });

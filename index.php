@@ -1,74 +1,8 @@
 <?php
-/**
- * index.php - Galerie Média
- */
-$configFile = 'config/config.json';
-$mediaTagsFile = 'config/media_tags.json'; // Harmonisé avec admin.php
-
-$config = file_exists($configFile) ? json_decode(file_get_contents($configFile), true) : [];
-
-$mediaTags = [];
-if (file_exists($mediaTagsFile)) {
-    $rawTags = json_decode(file_get_contents($mediaTagsFile), true);
-    // Normalisation des clés pour éviter les problèmes de slashes \ vs /
-    if (is_array($rawTags)) {
-        foreach ($rawTags as $key => $value) {
-            $mediaTags[str_replace('\\', '/', $key)] = $value;
-        }
-    }
-}
-
-$searchTerm = isset($_GET['search']) ? strtolower($_GET['search']) : null;
-$currentFolder = isset($_GET['folder']) ? basename($_GET['folder']) : null;
-
-$appName = $config['app_name'] ?? 'Galerie Média';
-$favicon = !empty($config['favicon_url']) ? $config['favicon_url'] : "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🖼️</text></svg>";
-$baseDir = 'uploads/';
-
-/**
- * FONCTION DE RENDU DES CARTES
- */
-function renderMediaCard($path, $folderName = null) {
-    global $mediaTags;
-    $file = basename($path);
-    $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-    
-    // Normalisation du chemin actuel pour la comparaison
-    $normalizedPath = str_replace('\\', '/', $path);
-    $tagsArray = $mediaTags[$normalizedPath] ?? [];
-    $tagsString = implode(' ', $tagsArray);
-
-    $protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ? "https" : "http";
-    $fullUrl = $protocol . "://" . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']), '/\\') . "/" . $path;
-
-    echo '
-    <div class="col media-item">
-        <div class="card h-100 shadow-sm media-card position-relative cursor-pointer" 
-             onclick="initGallery(this)" 
-             data-path="'.$path.'" 
-             data-url="'.$fullUrl.'" 
-             data-ext="'.$ext.'"
-             data-tags="'.htmlspecialchars(strtolower($tagsString)).'">';
-    
-    if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])) {
-        echo "<img src='$path' class='card-img-top' style='height:160px; object-fit:cover;'>";
-    } elseif (in_array($ext, ['mp4', 'webm', 'mov'])) {
-        echo "<div style='height:160px; background:#000;' class='position-relative d-flex align-items-center justify-content-center'><video class='w-100 h-100' style='object-fit:cover;'><source src='$path'></video><div class='position-absolute text-white'>▶️</div></div>";
-    }
-
-    echo "
-            <div class='card-body p-2'>
-                <p class='card-text small text-truncate mb-1 fw-bold'>$file</p>
-                <div class='tags-preview d-flex flex-wrap gap-1'>";
-                foreach($tagsArray as $t) {
-                    echo '<span class="badge bg-light text-muted border fw-normal" style="font-size:0.6rem;">#'.htmlspecialchars($t).'</span>';
-                }
-    echo "      </div>
-            </div>
-        </div>
-    </div>";
-}
+// index.php
+include_once 'index-header.php';
 ?>
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -129,14 +63,27 @@ function renderMediaCard($path, $folderName = null) {
             ?>
         </div>
     <?php else: ?>
-        <h4 class="mb-4 fw-bold">Mes Sets</h4>
+        <div class="mb-4">
+            <h4 class="fw-bold mb-3">Mes Sets</h4>
+            <div class="d-flex gap-2">
+                <button type="button" id="selectAllFoldersGal" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 4px 12px;">
+                    ✅ Tout
+                </button>
+                <button type="button" id="deselectAllFoldersGal" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 4px 12px;">
+                    ❌ Aucun
+                </button>
+            </div>
+        </div>
         <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
             <?php
             foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
                 $name = basename($folder);
                 $count = count(array_diff(scandir($folder), array('.', '..')));
-                echo '<div class="col text-center">
-                        <div class="card h-100 shadow-sm media-card border-0">
+                echo '<div class="col text-center position-relative folder-card-gal">
+                        <div class="card h-100 shadow-sm media-card border-0 position-relative">
+                            <div class="position-absolute top-0 start-0 p-2" style="z-index: 5;">
+                                <input type="checkbox" class="folder-select-checkbox-gal" data-folder="' . htmlspecialchars($folder) . '" checked style="width: 18px; height: 18px; cursor: pointer;">
+                            </div>
                             <a href="zip.php?folder='.urlencode($name).'" class="download-zip" title="Télécharger ZIP">📥 ZIP</a>
                             <a href="index.php?folder='.urlencode($name).'" class="text-decoration-none text-dark p-3">
                                 <div class="folder-icon">📁</div>
@@ -152,9 +99,17 @@ function renderMediaCard($path, $folderName = null) {
         </div>
     <?php endif; ?>
 </div>
+<?php include 'footer.php'; ?>
 
 <?php include 'index-modal.php'; ?>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Injecter les couleurs des tags depuis PHP (comme dans admin)
+    window.tagColors = <?= json_encode($tagColors) ?>;
+    console.log("Tag colors chargées pour la galerie:", window.tagColors);
+</script>
+
 <script src="js/index.js?<?= time() ?>"></script>
 </body>
 </html>

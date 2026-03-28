@@ -1,12 +1,19 @@
 <?php
 /**
  * FOOTER GÉNÉRAL AVEC INFOS DISQUE
- * Utilisé par : admin.php, tags.php, index.php
+ * footer.php
+ * Utilisé par : index.php, admin.php, tags.php
  */
 
 // 1. Sécurité pour les variables de configuration
-$appName    = isset($appName) ? $appName : 'Media Admin';
-$appVersion = isset($appVersion) ? $appVersion : '1.0.0';
+// Charger la configuration pour la version
+$configFile = 'config/config.json';
+$config = file_exists($configFile) ? json_decode(file_get_contents($configFile), true) : [];
+
+// 1. Sécurité pour les variables de configuration
+$appName    = isset($appName) ? $appName : ($config['app_name'] ?? 'Media Admin');
+$appVersion = isset($appVersion) ? $appVersion : ($config['version'] ?? '1.0.0');
+$maxUploadSize = $config['settings']['max_upload_size'] ?? '20M';
 
 // 2. Logique Disk Info (Protection contre les redéfinitions de fonction)
 if (!function_exists('getDiskInfo')) {
@@ -31,34 +38,34 @@ $disk = getDiskInfo(__DIR__);
 
 <footer class="mt-auto py-3 border-top bg-white shadow-sm mt-5">
     <div class="container-fluid px-5">
-        <div class="row align-items-center" style="font-size: 0.85rem;">
+        <div class="row align-items-center justify-content-between" style="font-size: 0.85rem;">
             
             <div class="col-md-4 text-muted">
-                <span class="fw-bold text-dark"><?= strtoupper($appName) ?></span> 
-                <span class="ms-1 opacity-75 text-secondary">v<?= $appVersion ?></span>
+                <span class="fw-bold text-dark"><?= strtoupper(htmlspecialchars($appName)) ?></span> 
+                <span class="ms-1 opacity-75 text-secondary">v<?= htmlspecialchars($appVersion) ?></span>
             </div>
             
-            <div class="col-md-4 d-flex justify-content-center align-items-center gap-3">
+            <div class="col-md-4 d-flex justify-content-center align-items-center gap-2">
                 <span class="text-muted small">Serveur <strong><?= $disk['os'] ?></strong></span>
-                
-                <div class="d-flex align-items-center gap-2">
-                    <div class="progress" style="height: 6px; width: 100px; background: #eee; border-radius: 10px;">
-                        <div class="progress-bar bg-<?= ($disk['percent'] > 85) ? 'danger' : 'success' ?>" 
-                             role="progressbar" 
-                             style="width: <?= $disk['percent'] ?>%" 
-                             aria-valuenow="<?= $disk['percent'] ?>" 
-                             aria-valuemin="0" 
-                             aria-valuemax="100">
-                        </div>
+                <div class="progress" style="height: 4px; width: 70px; background: #eee; border-radius: 10px;">
+                    <div class="progress-bar bg-<?= ($disk['percent'] > 85) ? 'danger' : 'success' ?>" 
+                         role="progressbar" 
+                         style="width: <?= $disk['percent'] ?>%" 
+                         aria-valuenow="<?= $disk['percent'] ?>" 
+                         aria-valuemin="0" 
+                         aria-valuemax="100">
                     </div>
-                    <span class="fw-bold text-muted" style="font-size: 0.75rem;">
-                        <?= $disk['free'] ?> Go libres / <?= $disk['total'] ?> Go
-                    </span>
                 </div>
+                <span class="fw-bold text-muted" style="font-size: 0.7rem;">
+                    <?= $disk['free'] ?> Go / <?= $disk['total'] ?> Go
+                </span>
+                <span class="text-secondary" style="font-size: 0.7rem;">
+                    max: <?= htmlspecialchars($maxUploadSize) ?>
+                </span>
             </div>
             
             <div class="col-md-4 text-end text-muted opacity-75">
-                &copy; <?= date('Y'); ?> — <span class="badge bg-light text-dark border">Mode Bureau Uniquement</span>
+                &copy; 2025-<?= date('Y'); ?> | LRDS
             </div>
 
         </div>
@@ -83,5 +90,17 @@ footer {
 /* Style pour la barre de progression */
 .progress-bar {
     transition: width 0.6s ease;
+}
+/* Responsive footer */
+@media (max-width: 768px) {
+    footer .row {
+        flex-direction: column;
+        text-align: center;
+        gap: 8px;
+    }
+    footer .col-md-4 {
+        text-align: center !important;
+        justify-content: center !important;
+    }
 }
 </style>
