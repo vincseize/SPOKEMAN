@@ -214,7 +214,7 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
                         <div class="d-flex align-items-center gap-2">
                             <span class="text-warning" style="font-size: 1.2rem;">📁</span>
                             <span class="fw-bold"><?= htmlspecialchars($fName) ?></span>
-                            <span class="badge bg-light text-muted border rounded-pill" style="font-size: 0.65rem; font-weight: normal; padding: 2px 8px;">
+                            <span class="badge bg-white text-muted border border-secondary-subtle rounded-pill" style="font-size: 0.7rem; font-weight: normal; padding: 2px 8px;">
                                 <?= count($files) ?>
                             </span>
                         </div>
@@ -224,7 +224,7 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
                                 <input type="text" name="new_folder_name" class="form-control form-control-sm" style="width: 120px; font-size: 0.75rem;" value="<?= htmlspecialchars($fName) ?>">
                                 <button type="submit" name="rename_folder" class="btn btn-sm btn-link p-0 ms-1 text-secondary" title="Renommer">✏️</button>
                             </form>
-                            <button type="button" onclick="confirmFolderDelete('<?= addslashes($folder) ?>', '<?= addslashes($fName) ?>')" class="btn btn-sm btn-link text-danger p-0" title="Supprimer le dossier">🗑️</button>
+                            <button type="button" class="btn-delete-folder" onclick="confirmFolderDelete('<?= addslashes($folder) ?>', '<?= addslashes($fName) ?>')" title="Supprimer le dossier">🗑️</button>
                         </div>
                     </div>
                     <div class="file-list" style="padding: 0;">
@@ -269,14 +269,17 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
                                         </div>
                                         
                                         <div class="d-flex align-items-center gap-1">
-                                            <button type="button" class="btn-copy-minimal btn btn-sm" 
-                                                    data-url="<?= htmlspecialchars($fullUrl) ?>" 
-                                                    title="Copier le lien">
-                                                📋
-                                            </button>
+<button type="button" class="btn-copy-minimal btn btn-sm" 
+        data-url="<?= htmlspecialchars($fullUrl) ?>" 
+        title="Copier le lien">
+    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="8" y="8" width="16" height="16" rx="1" ry="1"></rect>
+        <rect x="4" y="4" width="16" height="16" rx="1" ry="1"></rect>
+    </svg>
+</button>
                                             <form method="post" class="delete-file-form m-0" onclick="event.stopPropagation();">
                                                 <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
-                                                <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0" title="Supprimer">🗑️</button>
+                                                <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0" title="Supprimer">✕</button>
                                             </form>
                                         </div>
                                     </div>

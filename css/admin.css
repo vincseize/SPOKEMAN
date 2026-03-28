@@ -39,10 +39,30 @@
 .folder-title .btn-link {
     text-decoration: none;
     font-size: 0.8rem;
+    color: var(--muted);
 }
 
 .folder-title .btn-link:hover {
+    color: var(--primary);
     opacity: 0.8;
+}
+
+/* Bouton suppression dossier - poubelle rouge */
+.btn-delete-folder {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s;
+    color: #dc3545;
+    opacity: 0.6;
+    padding: 0;
+    margin-left: 8px;
+}
+
+.btn-delete-folder:hover {
+    opacity: 1;
+    transform: scale(1.05);
 }
 
 /* ==========================================================================
@@ -135,16 +155,19 @@
     transform: scale(1.05);
 }
 
+/* Bouton suppression fichier - croix rouge */
 .delete-file-form button {
     background: none;
     border: none;
     cursor: pointer;
     font-size: 0.9rem;
     transition: all 0.2s;
+    color: #dc3545;
+    opacity: 0.6;
 }
 
 .delete-file-form button:hover {
-    color: #dc3545;
+    opacity: 1;
     transform: scale(1.05);
 }
 
