@@ -205,6 +205,30 @@
 }
 
 /* ==========================================================================
+   SELECTED TAGS (badges de filtrage)
+   ========================================================================== */
+#selectedTagsContainer {
+    min-height: 40px;
+    margin-bottom: 8px;
+}
+
+.selected-tag {
+    transition: all 0.2s ease;
+}
+
+.selected-tag:hover {
+    transform: scale(1.02);
+}
+
+.remove-tag-btn {
+    transition: opacity 0.2s;
+}
+
+.remove-tag-btn:hover {
+    opacity: 0.8;
+}
+
+/* ==========================================================================
    RESPONSIVE
    ========================================================================== */
 @media (max-width: 768px) {

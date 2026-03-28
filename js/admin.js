@@ -1,6 +1,9 @@
 // js/admin.js
 console.log("admin.js chargé");
 
+// Variables pour stocker les tags sélectionnés (filtrage uniquement)
+let selectedTags = [];
+
 // COPIER LIEN
 function copyLink(url, btn) {
     navigator.clipboard.writeText(url).then(() => {
@@ -128,7 +131,6 @@ function submitRename(form) {
     
     const formData = new FormData(form);
     
-    // Vérifier que les données sont présentes
     const filePath = formData.get('file_path');
     const newName = formData.get('new_name');
     
@@ -161,7 +163,57 @@ function submitRename(form) {
     .catch(err => console.error('Erreur fetch:', err));
 }
 
-// FILTRAGE
+// AJOUTER UN TAG AU FILTRAGE
+function addSelectedTag(tag) {
+    if (!selectedTags.includes(tag)) {
+        selectedTags.push(tag);
+        updateSelectedTagsDisplay();
+        filterFiles();
+        console.log("Tag ajouté au filtre:", tag, "Tags actifs:", selectedTags);
+    }
+}
+
+// SUPPRIMER UN TAG DU FILTRAGE
+function removeSelectedTag(tag) {
+    selectedTags = selectedTags.filter(t => t !== tag);
+    updateSelectedTagsDisplay();
+    filterFiles();
+    console.log("Tag retiré du filtre:", tag, "Tags actifs:", selectedTags);
+}
+
+// METTRE À JOUR L'AFFICHAGE DES BADGES DE FILTRAGE
+function updateSelectedTagsDisplay() {
+    const container = document.getElementById('selectedTagsContainer');
+    if (!container) return;
+    
+    if (selectedTags.length === 0) {
+        container.innerHTML = '';
+        return;
+    }
+    
+    container.innerHTML = selectedTags.map(tag => {
+        const tagColor = window.tagColors ? (window.tagColors[tag] || '#6c757d') : '#6c757d';
+        return `
+            <div class="selected-tag badge" style="background: ${tagColor}; color: white; font-size: 0.75rem; padding: 4px 10px; border-radius: 20px; display: inline-flex; align-items: center; gap: 6px;">
+                #${escapeHtml(tag)}
+                <button type="button" class="remove-tag-btn" data-tag="${escapeHtml(tag)}" 
+                        style="background: none; border: none; color: white; cursor: pointer; font-size: 0.8rem; padding: 0; margin-left: 2px;">
+                    ✕
+                </button>
+            </div>
+        `;
+    }).join('');
+    
+    document.querySelectorAll('.remove-tag-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tag = this.getAttribute('data-tag');
+            removeSelectedTag(tag);
+        });
+    });
+}
+
+// FILTRAGE - Recherche par nom + tags sélectionnés
 function filterFiles() {
     const input = document.getElementById('searchInput');
     const clearBtn = document.getElementById('clearSearchBtn');
@@ -173,54 +225,33 @@ function filterFiles() {
         clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
     }
     
-    const isTagSearch = searchTerm.startsWith('#');
-    let searchValue = searchTerm;
-    if (isTagSearch) {
-        searchValue = searchTerm.substring(1);
-    }
-    
     console.log("=== FILTRAGE ===");
-    console.log("Recherche:", searchTerm);
-    console.log("Recherche tag:", isTagSearch);
-    console.log("Valeur recherchée:", searchValue);
+    console.log("Recherche nom:", searchTerm);
+    console.log("Tags sélectionnés:", selectedTags);
     
     let hasVisibleRows = false;
     
     document.querySelectorAll('.file-item-row').forEach(row => {
         const fileName = row.getAttribute('data-filename')?.toLowerCase() || "";
         const fileTagsAttr = row.getAttribute('data-tags') || "";
+        const fileTagsArray = fileTagsAttr.trim() === "" ? [] : fileTagsAttr.split(/\s+/);
         
-        let isMatch = false;
+        let isMatch = true;
         
-        if (searchValue === "") {
-            isMatch = true;
-        } else if (isTagSearch) {
-            // Recherche par tag - recherche PARTIELLE (contient)
-            const tagsArray = fileTagsAttr.trim() === "" ? [] : fileTagsAttr.split(/\s+/);
-            
-            console.log(`\n--- Fichier: ${fileName} ---`);
-            console.log(`Tags bruts: "${fileTagsAttr}"`);
-            console.log(`Tags array:`, tagsArray);
-            
-            tagsArray.forEach(tag => {
-                const contains = tag.includes(searchValue);
-                console.log(`  Tag "${tag}" contient "${searchValue}"? ${contains}`);
-                if (contains) console.log(`    -> MATCH!`);
-            });
-            
-            isMatch = tagsArray.some(tag => tag.includes(searchValue));
-            console.log(`Résultat pour ${fileName}: ${isMatch}`);
-            
-        } else {
-            // Recherche par nom de fichier
-            isMatch = fileName.includes(searchValue);
+        // Filtrage par tags (tous les tags sélectionnés doivent être présents)
+        if (selectedTags.length > 0) {
+            isMatch = selectedTags.every(tag => fileTagsArray.includes(tag));
+        }
+        
+        // Filtrage par nom de fichier
+        if (isMatch && searchTerm !== "") {
+            isMatch = fileName.includes(searchTerm);
         }
         
         row.style.display = isMatch ? "" : "none";
         if (isMatch) hasVisibleRows = true;
     });
     
-    console.log("\n=== RÉSULTAT ===");
     console.log("Fichiers visibles:", hasVisibleRows);
     
     document.querySelectorAll('.folder-block').forEach(block => {
@@ -229,31 +260,43 @@ function filterFiles() {
     });
     
     const noResultsDiv = document.getElementById('noSearchResults');
-    if (!hasVisibleRows && searchValue !== "") {
+    if (!hasVisibleRows && (selectedTags.length > 0 || searchTerm !== "")) {
+        let message = "";
+        if (selectedTags.length > 0 && searchTerm !== "") {
+            message = `Aucun résultat pour les tags [${selectedTags.map(t => "#"+t).join(", ")}] et le nom "${searchTerm}"`;
+        } else if (selectedTags.length > 0) {
+            message = `Aucun résultat pour les tags [${selectedTags.map(t => "#"+t).join(", ")}]`;
+        } else {
+            message = `Aucun résultat pour "${searchTerm}"`;
+        }
+        
         if (!noResultsDiv) {
             const mainCol = document.querySelector('.col-lg-9');
             const div = document.createElement('div');
             div.id = 'noSearchResults';
             div.className = 'alert alert-info text-center mt-3';
-            div.innerHTML = `Aucun résultat pour "${searchTerm}"`;
+            div.innerHTML = message;
             mainCol?.appendChild(div);
         } else {
             noResultsDiv.style.display = 'block';
-            noResultsDiv.innerHTML = `Aucun résultat pour "${searchTerm}"`;
+            noResultsDiv.innerHTML = message;
         }
     } else if (noResultsDiv) {
         noResultsDiv.style.display = 'none';
     }
 }
 
-// EFFACER LA RECHERCHE
+// EFFACER LA RECHERCHE (nom et tags)
 function clearSearch() {
+    selectedTags = [];
+    updateSelectedTagsDisplay();
     const input = document.getElementById('searchInput');
     if (input) {
         input.value = '';
         filterFiles();
         input.focus();
     }
+    console.log("Recherche effacée");
 }
 
 // ESCAPE HTML
@@ -268,12 +311,20 @@ function escapeHtml(str) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log("DOM chargé - Initialisation admin");
     
-    // Initialiser la modale via la fonction de admin-modal.js
     if (typeof window.initModal === 'function') {
         window.initModal();
     } else {
         console.error("window.initModal non disponible");
     }
+    
+    // Gestion des clics sur les tags dans la cloud
+    document.querySelectorAll('.tag-filter-btn').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tag = this.getAttribute('data-tag');
+            addSelectedTag(tag);
+        });
+    });
     
     // Modale sur les vignettes
     document.querySelectorAll('.preview-trigger').forEach(trigger => {
@@ -344,16 +395,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-// Suppression de fichier
-document.querySelectorAll('.delete-file-form').forEach(form => {
-    form.addEventListener('submit', (e) => {
-        e.stopPropagation();
-        if (!confirm('Supprimer ce fichier ?')) {
-            e.preventDefault();
-            return false;
-        }
+    // Suppression de fichier
+    document.querySelectorAll('.delete-file-form').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            e.stopPropagation();
+            if (!confirm('Supprimer ce fichier ?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
     });
-});
     
     // Raccourcis clavier pour la modale
     document.addEventListener('keydown', (e) => {
@@ -373,7 +424,7 @@ document.querySelectorAll('.delete-file-form').forEach(form => {
             if (modalContent) modalContent.innerHTML = '';
         });
     }
-
+    
     // Clear search button
     const clearBtn = document.getElementById('clearSearchBtn');
     if (clearBtn) {
@@ -382,7 +433,6 @@ document.querySelectorAll('.delete-file-form').forEach(form => {
             clearSearch();
         });
     }
-
 });
 
 // Exposer les fonctions
@@ -394,3 +444,6 @@ window.showTagSelectorForRow = showTagSelectorForRow;
 window.submitRename = submitRename;
 window.filterFiles = filterFiles;
 window.escapeHtml = escapeHtml;
+window.addSelectedTag = addSelectedTag;
+window.removeSelectedTag = removeSelectedTag;
+window.clearSearch = clearSearch;
