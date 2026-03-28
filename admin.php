@@ -89,6 +89,17 @@ include_once 'admin-header.php';
             </div>
             <?php endif; ?>
 
+<!-- Boutons de sélection/déselection -->
+    <div class="d-flex gap-2">
+        <button type="button" id="selectAllTags" class="btn btn-sm btn-outline-secondary" style="font-size: 0.65rem; padding: 2px 8px;">
+            ✅ Tout
+        </button>
+        <button type="button" id="deselectAllTags" class="btn btn-sm btn-outline-secondary" style="font-size: 0.65rem; padding: 2px 8px;">
+            ❌ Aucun
+        </button>
+    </div>
+
+
             <?php if (empty($folders)): ?>
                 <div class="alert alert-info">Aucun dossier. Créez-en un pour commencer.</div>
             <?php endif; ?>
@@ -101,23 +112,24 @@ include_once 'admin-header.php';
             ?>
             <div class="folder-block mb-4">
                 <div class="folder-title">
-                    <div class="d-flex align-items-center gap-2">
-                        <span class="text-warning" style="font-size: 1.2rem;">📁</span>
-                        <span class="fw-bold"><?= htmlspecialchars($fName) ?></span>
-                        <span class="badge bg-white text-muted border border-secondary-subtle rounded-pill" style="font-size: 0.7rem; font-weight: normal; padding: 2px 8px;">
-                            <?= count($files) ?>
-                        </span>
-                    </div>
-                    <div class="d-flex align-items-center gap-2">
-                        <form method="post" class="d-flex align-items-center m-0">
-                            <input type="hidden" name="folder_path" value="<?= htmlspecialchars($folder) ?>">
-                            <input type="text" name="new_folder_name" class="form-control form-control-sm" style="width: 120px; font-size: 0.75rem;" value="<?= htmlspecialchars($fName) ?>">
-                            <button type="submit" name="rename_folder" class="btn btn-sm btn-link p-0 ms-1 text-secondary" title="Renommer">✏️</button>
-                        </form>
-                        <button type="button" class="btn-delete-folder" onclick="confirmFolderDelete('<?= addslashes($folder) ?>', '<?= addslashes($fName) ?>')" title="Supprimer le dossier">🗑️</button>
-                    </div>
-                </div>
-                <div class="file-list" style="padding: 0;">
+    <div class="d-flex align-items-center gap-2">
+        <input type="checkbox" class="folder-select-checkbox" data-folder="<?= htmlspecialchars($folder) ?>" checked style="width: 16px; height: 16px; cursor: pointer;">
+        <span class="text-warning" style="font-size: 1.2rem;">📁</span>
+        <span class="fw-bold"><?= htmlspecialchars($fName) ?></span>
+        <span class="badge bg-white text-muted border border-secondary-subtle rounded-pill" style="font-size: 0.7rem; font-weight: normal; padding: 2px 8px;">
+            <?= count($files) ?>
+        </span>
+    </div>
+    <div class="d-flex align-items-center gap-2">
+        <form method="post" class="d-flex align-items-center m-0">
+            <input type="hidden" name="folder_path" value="<?= htmlspecialchars($folder) ?>">
+            <input type="text" name="new_folder_name" class="form-control form-control-sm" style="width: 120px; font-size: 0.75rem;" value="<?= htmlspecialchars($fName) ?>">
+            <button type="submit" name="rename_folder" class="btn btn-sm btn-link p-0 ms-1 text-secondary" title="Renommer">✏️</button>
+        </form>
+        <button type="button" class="btn-delete-folder" onclick="confirmFolderDelete('<?= addslashes($folder) ?>', '<?= addslashes($fName) ?>')" title="Supprimer le dossier">🗑️</button>
+    </div>
+</div>
+                <div class="file-list" style="padding: 0;padding-left: 34px;">
                     <?php foreach ($files as $file): 
                         $path = $folder . '/' . $file;
                         $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
@@ -223,7 +235,13 @@ include_once 'admin-header.php';
     console.log("Tag colors chargées:", window.tagColors);
 </script>
 
-<!-- Charger d'abord admin-modal.js puis admin.js -->
+<!-- Charger les modules JS dans l'ordre -->
+<script src="js/admin-core.js?<?= time() ?>"></script>
+<script src="js/admin-copy.js?<?= time() ?>"></script>
+<script src="js/admin-delete.js?<?= time() ?>"></script>
+<script src="js/admin-rename.js?<?= time() ?>"></script>
+<script src="js/admin-tags.js?<?= time() ?>"></script>
+<script src="js/admin-filters.js?<?= time() ?>"></script>
 <script src="js/admin-modal.js?<?= time() ?>"></script>
 <script src="js/admin.js?<?= time() ?>"></script>
 
