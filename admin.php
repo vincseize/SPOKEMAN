@@ -40,7 +40,7 @@ function cleanName($name) {
     return trim(preg_replace('/[^a-zA-Z0-9._\- ]/', '', str_replace($search, $replace, $name)));
 }
 
-// --- LOGIQUE POST (inchangée) ---
+// --- LOGIQUE POST ---
 if (isset($_POST['rename_folder']) && !empty($_POST['new_folder_name'])) {
     $newName = cleanName($_POST['new_folder_name']);
     $oldPath = $_POST['folder_path'];
@@ -58,7 +58,6 @@ if (isset($_POST['rename_folder']) && !empty($_POST['new_folder_name'])) {
 }
 
 if (isset($_POST['rename_file']) && !empty($_POST['new_name'])) {
-    error_log("Rename file: " . $_POST['file_path'] . " -> " . $_POST['new_name']);
     $oldPath = $_POST['file_path'];
     if (file_exists($oldPath)) {
         $info = pathinfo($oldPath);
@@ -70,12 +69,7 @@ if (isset($_POST['rename_file']) && !empty($_POST['new_name'])) {
                 unset($mediaTags[$oldPath]);
                 file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE));
             }
-            error_log("Fichier renommé avec succès: " . $newPath);
-        } else {
-            error_log("Le fichier destination existe déjà: " . $newPath);
         }
-    } else {
-        error_log("Le fichier source n'existe pas: " . $oldPath);
     }
     header("Location: admin.php"); exit;
 }
@@ -99,7 +93,6 @@ if (isset($_POST['update_media_tags'])) {
     $filePath = $_POST['file_path'];
     $selectedTags = $mediaTags[$filePath] ?? [];
     
-    // Ajout d'un tag
     if (isset($_POST['add_tag'])) {
         $newTag = $_POST['add_tag'];
         if (!in_array($newTag, $selectedTags)) {
@@ -107,7 +100,6 @@ if (isset($_POST['update_media_tags'])) {
         }
     }
     
-    // Suppression d'un tag
     if (isset($_POST['remove_tag'])) {
         $removeTag = $_POST['remove_tag'];
         $selectedTags = array_values(array_filter($selectedTags, function($t) use ($removeTag) {
@@ -205,132 +197,141 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
             </div>
 
             <!-- Zone principale -->
-<div class="col-lg-9">
-    <?php if (empty($folders)): ?>
-        <div class="alert alert-info">Aucun dossier. Créez-en un pour commencer.</div>
-    <?php endif; ?>
+            <div class="col-lg-9">
+                <?php if (empty($folders)): ?>
+                    <div class="alert alert-info">Aucun dossier. Créez-en un pour commencer.</div>
+                <?php endif; ?>
 
-    <?php foreach ($folders as $folder): 
-        $fName = basename($folder);
-        $files = @scandir($folder);
-        if ($files === false) $files = [];
-        $files = array_diff($files, array('.', '..'));
-    ?>
-    <div class="folder-block mb-4">
-        <div class="folder-title">
-            <span>📁 <?= htmlspecialchars($fName) ?></span>
-            <span class="badge bg-secondary"><?= count($files) ?> fichier(s)</span>
-        </div>
-        <div class="file-list" style="padding: 0;">
-            <?php foreach ($files as $file): 
-                $path = $folder . '/' . $file;
-                $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
-                $fullUrl = $rootUrl . $path;
-                $currentFileTags = $mediaTags[$path] ?? [];
-                if (!is_array($currentFileTags)) $currentFileTags = [];
-            ?>
-            <div class="file-item-row border-bottom p-2 hover-bg-light" 
-                 data-path="<?= htmlspecialchars($path) ?>"
-                 data-url="<?= htmlspecialchars($fullUrl) ?>"
-                 data-ext="<?= $ext ?>"
-                 data-filename="<?= htmlspecialchars($file) ?>"
-                 data-folder="<?= htmlspecialchars($folder) ?>"
-                 data-tags="<?= htmlspecialchars(implode(' ', $currentFileTags)) ?>"
-                 style="cursor: pointer; transition: background 0.2s;">
-                
-                <div class="d-flex align-items-center gap-3">
-                    <!-- Aperçu miniature -->
-                    <div class="preview-trigger" style="width: 50px; height: 50px; flex-shrink: 0;">
-                        <?php if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])): ?>
-                            <img src="<?= htmlspecialchars($path) ?>" class="rounded border" style="width: 50px; height: 50px; object-fit: cover;">
-                        <?php elseif (in_array($ext, ['mp4', 'webm', 'mov'])): ?>
-                            <div class="bg-dark rounded d-flex align-items-center justify-content-center text-white" style="width: 50px; height: 50px;">🎬</div>
-                        <?php else: ?>
-                            <div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 50px; height: 50px;">📄</div>
+                <?php foreach ($folders as $folder): 
+                    $fName = basename($folder);
+                    $files = @scandir($folder);
+                    if ($files === false) $files = [];
+                    $files = array_diff($files, array('.', '..'));
+                ?>
+                <div class="folder-block mb-4">
+                    <div class="folder-title">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="text-warning" style="font-size: 1.2rem;">📁</span>
+                            <span class="fw-bold"><?= htmlspecialchars($fName) ?></span>
+                            <span class="badge bg-light text-muted border rounded-pill" style="font-size: 0.65rem; font-weight: normal; padding: 2px 8px;">
+                                <?= count($files) ?>
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <form method="post" class="d-flex align-items-center m-0">
+                                <input type="hidden" name="folder_path" value="<?= htmlspecialchars($folder) ?>">
+                                <input type="text" name="new_folder_name" class="form-control form-control-sm" style="width: 120px; font-size: 0.75rem;" value="<?= htmlspecialchars($fName) ?>">
+                                <button type="submit" name="rename_folder" class="btn btn-sm btn-link p-0 ms-1 text-secondary" title="Renommer">✏️</button>
+                            </form>
+                            <button type="button" onclick="confirmFolderDelete('<?= addslashes($folder) ?>', '<?= addslashes($fName) ?>')" class="btn btn-sm btn-link text-danger p-0" title="Supprimer le dossier">🗑️</button>
+                        </div>
+                    </div>
+                    <div class="file-list" style="padding: 0;">
+                        <?php foreach ($files as $file): 
+                            $path = $folder . '/' . $file;
+                            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+                            $fullUrl = $rootUrl . $path;
+                            $currentFileTags = $mediaTags[$path] ?? [];
+                            if (!is_array($currentFileTags)) $currentFileTags = [];
+                        ?>
+                        <div class="file-item-row border-bottom p-2 hover-bg-light" 
+                             data-path="<?= htmlspecialchars($path) ?>"
+                             data-url="<?= htmlspecialchars($fullUrl) ?>"
+                             data-ext="<?= $ext ?>"
+                             data-filename="<?= htmlspecialchars($file) ?>"
+                             data-folder="<?= htmlspecialchars($folder) ?>"
+                             data-tags="<?= htmlspecialchars(implode(' ', $currentFileTags)) ?>">
+                            
+                            <div class="d-flex align-items-center gap-3">
+                                <!-- Aperçu miniature -->
+                                <div class="preview-trigger" style="width: 40px; height: 40px; flex-shrink: 0;">
+                                    <?php if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif', 'webp'])): ?>
+                                        <img src="<?= htmlspecialchars($path) ?>" class="rounded border" style="width: 40px; height: 40px; object-fit: cover;">
+                                    <?php elseif (in_array($ext, ['mp4', 'webm', 'mov'])): ?>
+                                        <div class="bg-dark rounded d-flex align-items-center justify-content-center text-white" style="width: 40px; height: 40px;">🎬</div>
+                                    <?php else: ?>
+                                        <div class="bg-light rounded d-flex align-items-center justify-content-center border" style="width: 40px; height: 40px;">📄</div>
+                                    <?php endif; ?>
+                                </div>
+                                
+                                <!-- Infos fichier + tags -->
+                                <div class="flex-grow-1 min-width-0">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="rename-wrapper" style="flex-grow: 1;">
+                                            <form method="post" class="m-0 rename-form">
+                                                <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
+                                                <input type="hidden" name="rename_file" value="1">
+                                                <input type="text" name="new_name" class="rename-input form-control form-control-sm" 
+                                                       style="width: 100%; min-width: 200px;" 
+                                                       value="<?= htmlspecialchars(pathinfo($file, PATHINFO_FILENAME)) ?>">
+                                            </form>
+                                        </div>
+                                        
+                                        <div class="d-flex align-items-center gap-1">
+                                            <button type="button" class="btn-copy-minimal btn btn-sm" 
+                                                    data-url="<?= htmlspecialchars($fullUrl) ?>" 
+                                                    title="Copier le lien">
+                                                📋
+                                            </button>
+                                            <form method="post" class="delete-file-form m-0" onclick="event.stopPropagation();">
+                                                <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
+                                                <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0" title="Supprimer">🗑️</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Tags -->
+                                    <div class="d-flex flex-wrap gap-1 mt-1">
+                                        <?php if (!empty($currentFileTags)): ?>
+                                            <?php foreach ($currentFileTags as $tagName): 
+                                                $tagColor = $tagColors[$tagName] ?? '#6c757d';
+                                            ?>
+                                                <div class="tag-item" style="background: <?= $tagColor ?>; color: white; font-size: 0.65rem; padding: 2px 6px 2px 8px;">
+                                                    <span>#<?= htmlspecialchars($tagName) ?></span>
+                                                    <button type="button" class="btn-remove-tag-row" data-path="<?= htmlspecialchars($path) ?>" data-tag="<?= htmlspecialchars($tagName) ?>" 
+                                                            style="background: none; border: none; color: white; cursor: pointer; font-size: 0.7rem; padding: 0 2px; margin-left: 2px;">
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            <?php endforeach; ?>
+                                        <?php else: ?>
+                                            <span class="text-muted small">Aucun tag</span>
+                                        <?php endif; ?>
+                                        
+                                        <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="<?= htmlspecialchars($path) ?>" 
+                                                style="font-size: 0.6rem; padding: 2px 6px;">
+                                            + Ajouter
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                        
+                        <?php if (empty($files)): ?>
+                            <div class="text-muted text-center py-3">Dossier vide</div>
                         <?php endif; ?>
                     </div>
-                    
-<!-- Infos fichier + tags -->
-<div class="flex-grow-1 min-width-0">
-    <div class="d-flex align-items-center gap-2 mb-1">
-        <div class="rename-wrapper" style="flex-grow: 1;">
-            <form method="post" class="m-0 rename-form" data-path="<?= htmlspecialchars($path) ?>">
-                <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
-                <input type="hidden" name="rename_file" value="1">
-                <input type="text" name="new_name" class="rename-input form-control form-control-sm" 
-                       style="width: 100%; min-width: 150px;" 
-                       value="<?= htmlspecialchars(pathinfo($file, PATHINFO_FILENAME)) ?>">
-            </form>
-        </div>
-        
-        <button type="button" class="btn-copy-minimal btn btn-sm btn-outline-secondary border-0" 
-                data-url="<?= htmlspecialchars($fullUrl) ?>" 
-                title="Copier le lien">
-            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-            </svg>
-        </button>
-        
-<form method="post" class="delete-file-form" onclick="event.stopPropagation();">
-    <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
-    <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0 opacity-50" title="Supprimer">✕</button>
-</form>
-    </div>
-    
-    <!-- TAGS -->
-    <div class="d-flex flex-wrap gap-2 align-items-center mt-1">
-        <?php if (!empty($currentFileTags)): ?>
-            <?php foreach ($currentFileTags as $tagName): 
-                $tagColor = $tagColors[$tagName] ?? '#6c757d';
-            ?>
-                <div class="tag-item" style="background: <?= $tagColor ?>; color: white;">
-                    <span>#<?= htmlspecialchars($tagName) ?></span>
-                    <button type="button" class="btn-remove-tag-row" data-path="<?= htmlspecialchars($path) ?>" data-tag="<?= htmlspecialchars($tagName) ?>">
-                        ✕
-                    </button>
                 </div>
-            <?php endforeach; ?>
-        <?php else: ?>
-            <span class="text-muted small">Aucun tag</span>
-        <?php endif; ?>
-        
-        <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="<?= htmlspecialchars($path) ?>">
-            + Ajouter
-        </button>
-    </div>
-</div>
-                </div>
-            </div>
-            <?php endforeach; ?>
-            
-            <?php if (empty($files)): ?>
-                <div class="text-muted text-center py-3">Dossier vide</div>
-            <?php endif; ?>
-        </div>
-    </div>
-    <?php endforeach; ?>
-</div>
-
-
+                <?php endforeach; ?>
             </div>
         </div>
     </div>
 
     <!-- Modale -->
-<?php if(file_exists('admin-modal.php')) include 'admin-modal.php'; ?>
+    <?php if(file_exists('admin-modal.php')) include 'admin-modal.php'; ?>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
-<script>
-    // Injecter les couleurs des tags depuis PHP
-    window.tagColors = <?= json_encode($tagColors) ?>;
-    console.log("Tag colors chargées:", window.tagColors);
-</script>
+    <script>
+        // Injecter les couleurs des tags depuis PHP
+        window.tagColors = <?= json_encode($tagColors) ?>;
+        console.log("Tag colors chargées:", window.tagColors);
+    </script>
 
-<!-- Charger d'abord admin-modal.js puis admin.js -->
-<script src="js/admin-modal.js?<?= time() ?>"></script>
-<script src="js/admin.js?<?= time() ?>"></script>
+    <!-- Charger d'abord admin-modal.js puis admin.js -->
+    <script src="js/admin-modal.js?<?= time() ?>"></script>
+    <script src="js/admin.js?<?= time() ?>"></script>
 
 </body>
 </html>
