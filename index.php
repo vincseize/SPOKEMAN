@@ -1,6 +1,13 @@
 <?php
 // index.php
 include_once 'index-header.php';
+
+// Définir $rootUrl (comme dans admin.php)
+$rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']), '/\\') . "/";
+
+// Récupérer les tags depuis l'URL
+$tagsParam = isset($_GET['tags']) ? explode(',', $_GET['tags']) : [];
+$searchTerm = isset($_GET['search']) ? $_GET['search'] : null;
 ?>
 
 <!DOCTYPE html>
@@ -21,95 +28,74 @@ include_once 'index-header.php';
             <img src="<?= $favicon ?>" alt="Logo" width="28" height="28" class="me-2" style="filter: brightness(0) invert(1);">
             <?= strtoupper(htmlspecialchars($appName)) ?>
         </a>
-        <form action="index.php" method="GET" class="d-flex flex-grow-1 justify-content-center px-5">
-            <input type="text" name="search" class="form-control form-control-sm" style="max-width: 500px;" placeholder="Rechercher nom ou #tag..." value="<?= htmlspecialchars($searchTerm ?? '') ?>">
-            <button type="submit" class="btn btn-light btn-sm ms-2">🔍</button>
-        </form>
-        <a href="admin.php" class="btn btn-light btn-sm fw-bold">⚙️ Administration</a>
+        <div class="d-flex gap-3 align-items-center">
+            <div class="position-relative">
+                <input type="text" id="searchInput" class="form-control form-control-sm" 
+                       placeholder="Rechercher par nom..." 
+                       style="width: 250px; padding-left: 30px; padding-right: 30px;"
+                       value="<?= htmlspecialchars($searchTerm ?? '') ?>"
+                       onkeyup="filterFiles()">
+                <span class="position-absolute start-0 top-50 translate-middle-y ms-2 text-muted" style="font-size: 0.8rem;">🔍</span>
+                <button type="button" id="clearSearchBtn" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-1 p-0" 
+                        style="display: none; background: none; border: none; color: #aaa; font-size: 0.8rem; cursor: pointer;"
+                        onclick="clearSearch()">
+                    ✕
+                </button>
+            </div>
+            <a href="admin.php" class="btn btn-light btn-sm fw-bold">⚙️ Administration</a>
+        </div>
     </div>
 </nav>
 
 <div class="container-fluid px-5 pb-5 main-content">
-    <?php if ($searchTerm): ?>
-        <h5 class="mb-4 text-muted">Résultats pour : "<?= htmlspecialchars($searchTerm) ?>"</h5>
-        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
-            <?php
-            $found = false;
-            $allFolders = glob($baseDir . '*', GLOB_ONLYDIR);
-            foreach ($allFolders as $folder) {
-                $files = array_diff(scandir($folder), array('.', '..'));
-                foreach ($files as $file) {
-                    $path = $folder . '/' . $file;
-                    $tags = implode(' ', $mediaTags[$path] ?? []);
-                    if (strpos(strtolower($file), $searchTerm) !== false || strpos(strtolower($tags), $searchTerm) !== false) {
-                        $found = true; renderMediaCard($path, basename($folder));
-                    }
-                }
-            }
-            if (!$found) echo "<div class='col-12'><p class='alert alert-info'>Aucun résultat.</p></div>";
-            ?>
-        </div>
+    <!-- Barre de tags cliquables -->
+    <?php if (!empty($tagNamesList)): ?>
+    <div class="tags-cloud mb-3 p-2 bg-white rounded border d-flex flex-wrap gap-2 align-items-center">
+        <span class="text-muted small fw-bold">🏷️ Filtres :</span>
+        <?php foreach ($tagNamesList as $tagName): 
+            $tagColor = $tagColors[$tagName] ?? '#6c757d';
+        ?>
+            <button type="button" class="tag-filter-btn" data-tag="<?= htmlspecialchars($tagName) ?>" 
+                    style="background: <?= $tagColor ?>; color: white; border: none; border-radius: 20px; padding: 4px 12px; font-size: 0.7rem; cursor: pointer; transition: all 0.2s;">
+                #<?= htmlspecialchars($tagName) ?>
+            </button>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+    <?php if (!empty($tagsParam) || !empty($searchTerm)): ?>
+        <!-- Affichage des résultats de recherche/filtrage -->
+        <?php 
+        $selectedTagsFromJS = $tagsParam;
+        include 'index-search-result.php'; 
+        ?>
     <?php elseif ($currentFolder && is_dir($baseDir . $currentFolder)): ?>
-        <nav aria-label="breadcrumb" class="mb-4">
-          <ol class="breadcrumb shadow-sm p-2 bg-white rounded">
-            <li class="breadcrumb-item"><a href="index.php" class="text-decoration-none fw-bold">Sets</a></li>
-            <li class="breadcrumb-item active text-capitalize"><?= htmlspecialchars($currentFolder); ?></li>
-          </ol>
-        </nav>
-        <div class="row row-cols-2 row-cols-md-3 row-cols-lg-5 g-4">
-            <?php
-            $files = array_diff(scandir($baseDir . $currentFolder), array('.', '..'));
-            foreach ($files as $file) renderMediaCard($baseDir . $currentFolder . '/' . $file);
-            ?>
-        </div>
+        <!-- Affichage d'un dossier spécifique (mode grille) -->
+        <?php include 'index-folder-view.php'; ?>
     <?php else: ?>
-        <div class="mb-4">
-            <h4 class="fw-bold mb-3">Mes Sets</h4>
-            <div class="d-flex gap-2">
-                <button type="button" id="selectAllFoldersGal" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 4px 12px;">
-                    ✅ Tout
-                </button>
-                <button type="button" id="deselectAllFoldersGal" class="btn btn-sm btn-outline-secondary" style="font-size: 0.7rem; padding: 4px 12px;">
-                    ❌ Aucun
-                </button>
-            </div>
-        </div>
-        <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
-            <?php
-            foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
-                $name = basename($folder);
-                $count = count(array_diff(scandir($folder), array('.', '..')));
-                echo '<div class="col text-center position-relative folder-card-gal">
-                        <div class="card h-100 shadow-sm media-card border-0 position-relative">
-                            <div class="position-absolute top-0 start-0 p-2" style="z-index: 5;">
-                                <input type="checkbox" class="folder-select-checkbox-gal" data-folder="' . htmlspecialchars($folder) . '" checked style="width: 18px; height: 18px; cursor: pointer;">
-                            </div>
-                            <a href="zip.php?folder='.urlencode($name).'" class="download-zip" title="Télécharger ZIP">📥 ZIP</a>
-                            <a href="index.php?folder='.urlencode($name).'" class="text-decoration-none text-dark p-3">
-                                <div class="folder-icon">📁</div>
-                                <div class="card-body p-1">
-                                    <h6 class="card-title text-capitalize mb-0 small fw-bold">'.htmlspecialchars($name).'</h6>
-                                    <small class="text-muted" style="font-size:0.7rem">'.$count.' fichiers</small>
-                                </div>
-                            </a>
-                        </div>
-                    </div>';
-            }
-            ?>
-        </div>
+        <!-- Affichage des dossiers en grille -->
+        <?php include 'index-folders-grid.php'; ?>
     <?php endif; ?>
 </div>
-<?php include 'footer.php'; ?>
 
+<?php include 'footer.php'; ?>
 <?php include 'index-modal.php'; ?>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 
 <script>
-    // Injecter les couleurs des tags depuis PHP (comme dans admin)
     window.tagColors = <?= json_encode($tagColors) ?>;
-    console.log("Tag colors chargées pour la galerie:", window.tagColors);
+    window.selectedTagsFromUrl = <?= json_encode($tagsParam) ?>;
+    console.log("Tag colors chargées:", window.tagColors);
+    console.log("Tags depuis l'URL:", window.selectedTagsFromUrl);
 </script>
 
-<script src="js/index.js?<?= time() ?>"></script>
+<script src="js/index/index-core.js?<?= time() ?>"></script>
+<script src="js/index/index-copy.js?<?= time() ?>"></script>
+<script src="js/index/index-gallery.js?<?= time() ?>"></script>
+<script src="js/index/index-folders.js?<?= time() ?>"></script>
+<script src="js/index/index-filters.js?<?= time() ?>"></script>
+<script src="js/index/index.js?<?= time() ?>"></script>
+
 </body>
 </html>
