@@ -272,10 +272,10 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
             </svg>
         </button>
         
-        <form method="post" class="delete-file-form" onsubmit="return confirm('Supprimer ?');" onclick="event.stopPropagation();">
-            <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
-            <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0 opacity-50" title="Supprimer">✕</button>
-        </form>
+<form method="post" class="delete-file-form" onclick="event.stopPropagation();">
+    <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
+    <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0 opacity-50" title="Supprimer">✕</button>
+</form>
     </div>
     
     <!-- TAGS -->

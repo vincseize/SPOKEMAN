@@ -266,14 +266,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
     
-    // Suppression de fichier
-    document.querySelectorAll('.delete-file-form').forEach(form => {
-        form.addEventListener('submit', (e) => {
-            if (!confirm('Supprimer ce fichier ?')) {
-                e.preventDefault();
-            }
-        });
+// Suppression de fichier
+document.querySelectorAll('.delete-file-form').forEach(form => {
+    form.addEventListener('submit', (e) => {
+        e.stopPropagation();
+        if (!confirm('Supprimer ce fichier ?')) {
+            e.preventDefault();
+            return false;
+        }
     });
+});
     
     // Raccourcis clavier pour la modale
     document.addEventListener('keydown', (e) => {
