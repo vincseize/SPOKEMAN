@@ -1,298 +1,12 @@
+// js/admin.js
 console.log("admin.js chargé");
 
-let currentGallery = [];
-let currentIndex = 0;
-let previewModal = null;
-let currentFilePath = null;
-// Récupérer les couleurs depuis la variable globale injectée par PHP
-let tagColors = window.tagColors || {};
-
-// OUVERTURE DE LA MODALE
-function openModal(path, url, ext, fileName) {
-    console.log("Ouverture modale:", path);
-    currentFilePath = path;
-    
-    // Récupérer le dossier du fichier cliqué
-    const clickedCard = document.querySelector(`.file-item-row[data-path="${path}"]`);
-    if (!clickedCard) {
-        console.error("Carte non trouvée pour le chemin:", path);
-        return;
-    }
-    const clickedFolder = clickedCard.getAttribute('data-folder');
-    console.log("Dossier du fichier cliqué:", clickedFolder);
-    
-    // Filtrer les cartes pour ne garder que celles du même dossier
-    const allCards = document.querySelectorAll('.file-item-row');
-    const filteredCards = Array.from(allCards).filter(card => {
-        return card.getAttribute('data-folder') === clickedFolder;
-    });
-    
-    console.log("Cartes du dossier:", filteredCards.length);
-    
-    currentGallery = filteredCards.map(card => {
-        const tagsAttr = card.getAttribute('data-tags');
-        const tags = tagsAttr && tagsAttr.trim() !== '' ? tagsAttr.split(' ') : [];
-        
-        return {
-            path: card.getAttribute('data-path'),
-            url: card.getAttribute('data-url'),
-            ext: card.getAttribute('data-ext'),
-            fileName: card.getAttribute('data-filename'),
-            tags: tags
-        };
-    });
-    
-    console.log("Galerie construite avec", currentGallery.length, "fichiers");
-    
-    currentIndex = currentGallery.findIndex(item => item.path === path);
-    if (currentIndex === -1) currentIndex = 0;
-    
-    updateModalContent();
-    
-    if (previewModal) {
-        previewModal.show();
-    }
-}
-
-// AFFICHER LES TAGS DANS LA MODALE
-function displayModalTags(filePath, tags) {
-    const container = document.getElementById('modalTagsList');
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (!tags || tags.length === 0) {
-        container.innerHTML = '<span class="text-muted small">Aucun tag</span>';
-        return;
-    }
-    
-    tags.forEach(tag => {
-        const tagColor = tagColors[tag] || '#6c757d';
-        const tagElement = document.createElement('div');
-        tagElement.className = 'tag-item d-flex align-items-center gap-1';
-        tagElement.style.background = tagColor;
-        tagElement.style.color = 'white';
-        tagElement.style.borderRadius = '4px';
-        tagElement.style.padding = '2px 6px 2px 10px';
-        tagElement.style.fontSize = '0.7rem';
-        tagElement.style.fontWeight = '500';
-        
-        tagElement.innerHTML = `
-            <span>#${escapeHtml(tag)}</span>
-            <button type="button" class="btn-remove-tag" onclick="window.removeTag('${escapeHtml(tag)}')" 
-                    style="background: none; border: none; color: white; cursor: pointer; font-size: 0.8rem; padding: 0 4px; opacity: 0.7;"
-                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
-                ✕
-            </button>
-        `;
-        container.appendChild(tagElement);
-    });
-}
-
-// SUPPRIMER UN TAG
-function removeTag(tagName) {
-    if (!confirm(`Retirer le tag "${tagName}" ?`)) return;
-    
-    const formData = new FormData();
-    formData.append('file_path', currentFilePath);
-    formData.append('remove_tag', tagName);
-    formData.append('update_media_tags', '1');
-    
-    fetch('admin.php', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(response => {
-        if (response.ok) {
-            // Mettre à jour les tags dans la galerie
-            const currentItem = currentGallery[currentIndex];
-            if (currentItem) {
-                const updatedTags = currentItem.tags.filter(t => t !== tagName);
-                currentItem.tags = updatedTags;
-                displayModalTags(currentFilePath, updatedTags);
-                
-                // Mettre à jour l'attribut data-tags dans la carte
-                const card = document.querySelector(`.file-item-row[data-path="${currentFilePath}"]`);
-                if (card) {
-                    card.setAttribute('data-tags', updatedTags.join(' ').toLowerCase());
-                    const tagsContainer = card.querySelector('.file-tags');
-                    if (tagsContainer) {
-                        tagsContainer.innerHTML = updatedTags.map(t => `<span class="tag-badge" style="background: ${tagColors[t] || '#6c757d'};">#${t}</span>`).join('');
-                    }
-                }
-            }
-        }
-    })
-    .catch(err => console.error('Erreur suppression tag:', err));
-}
-
-// AFFICHER LE SÉLECTEUR DE TAGS
-function showTagSelector() {
-    const currentItem = currentGallery[currentIndex];
-    const currentTags = currentItem?.tags || [];
-    
-    // Tags disponibles (ceux qui ne sont pas déjà attribués)
-    const availableTags = Object.keys(tagColors).filter(tag => !currentTags.includes(tag));
-    
-    const container = document.getElementById('availableTagsList');
-    if (!container) return;
-    
-    if (availableTags.length === 0) {
-        container.innerHTML = '<div class="text-muted text-center">Aucun tag disponible</div>';
-    } else {
-        container.innerHTML = availableTags.map(tag => {
-            const tagColor = tagColors[tag] || '#6c757d';
-            return `
-                <button type="button" class="btn btn-sm" 
-                        onclick="window.addTag('${escapeHtml(tag)}')"
-                        style="background: ${tagColor}; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
-                    #${escapeHtml(tag)}
-                </button>
-            `;
-        }).join('');
-    }
-    
-    const modal = new bootstrap.Modal(document.getElementById('tagSelectorModal'));
-    modal.show();
-}
-
-// AJOUTER UN TAG
-function addTag(tagName) {
-    const formData = new FormData();
-    formData.append('file_path', currentFilePath);
-    formData.append('add_tag', tagName);
-    formData.append('update_media_tags', '1');
-    
-    fetch('admin.php', {
-        method: 'POST',
-        body: formData,
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(response => {
-        if (response.ok) {
-            // Mettre à jour les tags dans la galerie
-            const currentItem = currentGallery[currentIndex];
-            if (currentItem) {
-                const updatedTags = [...currentItem.tags, tagName];
-                currentItem.tags = updatedTags;
-                displayModalTags(currentFilePath, updatedTags);
-                
-                // Mettre à jour l'attribut data-tags dans la carte
-                const card = document.querySelector(`.file-item-row[data-path="${currentFilePath}"]`);
-                if (card) {
-                    card.setAttribute('data-tags', updatedTags.join(' ').toLowerCase());
-                    const tagsContainer = card.querySelector('.file-tags');
-                    if (tagsContainer) {
-                        tagsContainer.innerHTML = updatedTags.map(t => `<span class="tag-badge" style="background: ${tagColors[t] || '#6c757d'};">#${t}</span>`).join('');
-                    }
-                }
-                
-                // Fermer la modale de sélection
-                const selectorModal = bootstrap.Modal.getInstance(document.getElementById('tagSelectorModal'));
-                if (selectorModal) selectorModal.hide();
-            }
-        }
-    })
-    .catch(err => console.error('Erreur ajout tag:', err));
-}
-
-// MISE À JOUR MODALE
-function updateModalContent() {
-    const item = currentGallery[currentIndex];
-    if (!item) return;
-    
-    const modalContent = document.getElementById('modalMediaContent');
-    const modalFileName = document.getElementById('modalFileName');
-    const modalDeletePath = document.getElementById('modalDeletePath');
-    const modalCopyBtn = document.getElementById('modalCopyBtn');
-    const specsElem = document.getElementById('modalMediaSpecs');
-    
-    if (!modalContent) return;
-    
-    modalContent.innerHTML = '';
-    
-    if (modalFileName) {
-        modalFileName.innerHTML = `<span class="badge bg-dark me-2">${currentIndex + 1} / ${currentGallery.length}</span> ${item.fileName || item.path.split('/').pop()}`;
-    }
-    
-    if (modalDeletePath) {
-        modalDeletePath.value = item.path;
-    }
-    
-    if (modalCopyBtn) {
-        modalCopyBtn.dataset.copyUrl = item.url;
-        modalCopyBtn.innerText = "📋 Copier";
-    }
-    
-    const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
-    const videoExts = ['mp4', 'webm', 'mov'];
-    
-    if (imgExts.includes(item.ext)) {
-        const img = new Image();
-        img.src = item.path;
-        img.className = "img-fluid shadow rounded";
-        img.style.maxHeight = "65vh";
-        img.onload = function() {
-            if (specsElem) {
-                fetch(item.path).then(r => r.blob()).then(blob => {
-                    const size = (blob.size / 1024).toFixed(1) + ' KB';
-                    specsElem.innerHTML = `${img.naturalWidth}x${img.naturalHeight} px | ${size}`;
-                }).catch(() => {
-                    specsElem.innerHTML = `${img.naturalWidth}x${img.naturalHeight} px`;
-                });
-            }
-        };
-        modalContent.appendChild(img);
-    } else if (videoExts.includes(item.ext)) {
-        const video = document.createElement('video');
-        video.src = item.path;
-        video.controls = true;
-        video.autoplay = true;
-        video.className = "w-100 shadow rounded";
-        video.style.maxHeight = "65vh";
-        if (specsElem) specsElem.innerHTML = "Vidéo";
-        modalContent.appendChild(video);
-    } else {
-        modalContent.innerHTML = `<div class="p-5 bg-light rounded border text-center"><h1 class="display-1">📄</h1><h5>.${item.ext.toUpperCase()}</h5></div>`;
-        if (specsElem) specsElem.innerHTML = "Fichier document";
-    }
-    
-    // Afficher les tags
-    displayModalTags(item.path, item.tags || []);
-}
-
-// NAVIGATION
-function changeMedia(direction, event) {
-    if (event) {
-        event.preventDefault();
-        event.stopPropagation();
-    }
-    
-    if (currentGallery.length <= 1) return;
-    
-    currentIndex += direction;
-    if (currentIndex < 0) currentIndex = currentGallery.length - 1;
-    if (currentIndex >= currentGallery.length) currentIndex = 0;
-    
-    currentFilePath = currentGallery[currentIndex].path;
-    updateModalContent();
-}
-
-// COPIER URL
-function modalCopyAction() {
-    const modalCopyBtn = document.getElementById('modalCopyBtn');
-    if (!modalCopyBtn) return;
-    
-    const url = modalCopyBtn.dataset.copyUrl;
-    if (!url) return;
-    
+// COPIER LIEN
+function copyLink(url, btn) {
     navigator.clipboard.writeText(url).then(() => {
-        const originalText = modalCopyBtn.innerText;
-        modalCopyBtn.innerText = "✅ Copié !";
-        setTimeout(() => {
-            modalCopyBtn.innerText = originalText;
-        }, 2000);
+        const original = btn.innerHTML;
+        btn.innerHTML = "OK";
+        setTimeout(() => btn.innerHTML = original, 1500);
     });
 }
 
@@ -307,18 +21,146 @@ function confirmFolderDelete(path, name) {
     }
 }
 
-// COPIE LIEN
-function copyLink(url, btn) {
-    navigator.clipboard.writeText(url).then(() => {
-        const original = btn.innerHTML;
-        btn.innerHTML = "OK";
-        setTimeout(() => btn.innerHTML = original, 1500);
+// SUPPRIMER UN TAG
+function removeTagFromRow(filePath, tagName) {
+    if (!confirm(`Retirer le tag "${tagName}" ?`)) return;
+    
+    const formData = new FormData();
+    formData.append('file_path', filePath);
+    formData.append('remove_tag', tagName);
+    formData.append('update_media_tags', '1');
+    
+    fetch('admin.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.reload();
+        }
+    })
+    .catch(err => console.error('Erreur suppression tag:', err));
+}
+
+// AJOUTER UN TAG
+function addTagToRow(filePath, tagName) {
+    const formData = new FormData();
+    formData.append('file_path', filePath);
+    formData.append('add_tag', tagName);
+    formData.append('update_media_tags', '1');
+    
+    fetch('admin.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (response.ok) {
+            window.location.reload();
+        }
+    })
+    .catch(err => console.error('Erreur ajout tag:', err));
+}
+
+// AFFICHER LE SÉLECTEUR DE TAGS
+function showTagSelectorForRow(filePath) {
+    const row = document.querySelector(`.file-item-row[data-path="${filePath}"]`);
+    if (!row) return;
+    
+    const currentTags = row.getAttribute('data-tags') ? row.getAttribute('data-tags').split(' ') : [];
+    const tagColors = window.tagColors || {};
+    const availableTags = Object.keys(tagColors).filter(tag => !currentTags.includes(tag));
+    
+    if (availableTags.length === 0) {
+        alert('Aucun tag disponible');
+        return;
+    }
+    
+    const modalHtml = `
+        <div class="modal fade" id="tempTagModal" tabindex="-1">
+            <div class="modal-dialog modal-sm">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h6 class="modal-title">Ajouter un tag</h6>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="d-flex flex-wrap gap-2">
+                            ${availableTags.map(tag => {
+                                const tagColor = tagColors[tag] || '#6c757d';
+                                return `<button type="button" class="btn btn-sm tag-select-btn" 
+                                        data-path="${filePath}" data-tag="${escapeHtml(tag)}"
+                                        style="background: ${tagColor}; color: white; border: none; padding: 4px 12px; border-radius: 4px;">
+                                    #${escapeHtml(tag)}
+                                </button>`;
+                            }).join('')}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const oldModal = document.getElementById('tempTagModal');
+    if (oldModal) oldModal.remove();
+    
+    document.body.insertAdjacentHTML('beforeend', modalHtml);
+    const modal = new bootstrap.Modal(document.getElementById('tempTagModal'));
+    modal.show();
+    
+    document.querySelectorAll('.tag-select-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const path = this.getAttribute('data-path');
+            const tag = this.getAttribute('data-tag');
+            addTagToRow(path, tag);
+            modal.hide();
+            setTimeout(() => document.getElementById('tempTagModal')?.remove(), 300);
+        });
     });
+}
+
+// SOUMISSION RENOMMAGE
+function submitRename(form) {
+    console.log("Soumission du formulaire de renommage");
+    
+    const formData = new FormData(form);
+    
+    // Vérifier que les données sont présentes
+    const filePath = formData.get('file_path');
+    const newName = formData.get('new_name');
+    
+    if (!filePath) {
+        console.error("Chemin du fichier manquant");
+        return;
+    }
+    
+    if (!newName || newName.trim() === '') {
+        console.error("Nom invalide");
+        return;
+    }
+    
+    console.log("Renommage de:", filePath, "vers:", newName);
+    
+    fetch('admin.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        console.log("Réponse reçue, status:", response.status);
+        if (response.ok) {
+            console.log("Renommage réussi, rechargement...");
+            window.location.reload();
+        } else {
+            console.error("Erreur lors du renommage, status:", response.status);
+        }
+    })
+    .catch(err => console.error('Erreur fetch:', err));
 }
 
 // FILTRAGE
 function filterFiles() {
-    console.log("filterFiles appelé");
     const input = document.getElementById('searchInput');
     if (!input) return;
     const searchTerm = input.value.toLowerCase();
@@ -330,7 +172,6 @@ function filterFiles() {
         row.style.display = isMatch ? "" : "none";
     });
     
-    // Afficher/cacher les dossiers vides
     document.querySelectorAll('.folder-block').forEach(block => {
         const visibleRows = block.querySelectorAll('.file-item-row[style=""]');
         block.style.display = visibleRows.length > 0 ? "" : "none";
@@ -347,90 +188,119 @@ function escapeHtml(str) {
 
 // INITIALISATION
 document.addEventListener('DOMContentLoaded', function() {
-    console.log("DOM chargé");
+    console.log("DOM chargé - Initialisation admin");
     
-    const modalElement = document.getElementById('previewModal');
-    if (modalElement) {
-        previewModal = new bootstrap.Modal(modalElement);
-        console.log("Modale initialisée");
+    // Initialiser la modale via la fonction de admin-modal.js
+    if (typeof window.initModal === 'function') {
+        window.initModal();
+    } else {
+        console.error("window.initModal non disponible");
     }
     
-    const cards = document.querySelectorAll('.file-item-row');
-    console.log("Fichiers trouvés:", cards.length);
-    
-    cards.forEach(card => {
-        card.addEventListener('click', function(e) {
-            // Ne pas déclencher si on clique sur un formulaire, bouton, input, ou zone de renommage
-            if (e.target.closest('form') || 
-                e.target.closest('button') || 
-                e.target.closest('input') || 
-                e.target.closest('.rename-container') ||
-                e.target.closest('.btn-rename') ||
-                e.target.closest('.btn-validate')) {
-                console.log("Clic ignoré (élément interactif)");
-                return;
+    // Modale sur les vignettes
+    document.querySelectorAll('.preview-trigger').forEach(trigger => {
+        trigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const row = this.closest('.file-item-row');
+            if (row && typeof window.openModal === 'function') {
+                window.openModal(
+                    row.getAttribute('data-path'),
+                    row.getAttribute('data-url'),
+                    row.getAttribute('data-ext'),
+                    row.getAttribute('data-filename')
+                );
+            } else {
+                console.error("window.openModal non disponible");
             }
-            e.stopPropagation();
-            const path = this.getAttribute('data-path');
-            const url = this.getAttribute('data-url');
-            const ext = this.getAttribute('data-ext');
-            const fileName = this.getAttribute('data-filename');
-            openModal(path, url, ext, fileName);
         });
     });
     
-    // Empêcher la propagation des événements sur les inputs de renommage
+    // Renommage - gestion des inputs
     document.querySelectorAll('.rename-input').forEach(input => {
-        input.addEventListener('click', function(e) {
+        input.addEventListener('click', (e) => e.stopPropagation());
+        input.addEventListener('focus', (e) => e.stopPropagation());
+        input.addEventListener('keydown', (e) => {
             e.stopPropagation();
-        });
-        input.addEventListener('focus', function(e) {
-            e.stopPropagation();
-        });
-        input.addEventListener('keydown', function(e) {
-            e.stopPropagation();
-        });
-    });
-    
-    // Empêcher la propagation sur les boutons de renommage
-    document.querySelectorAll('.btn-rename, .btn-validate').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            e.stopPropagation();
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const form = input.closest('form');
+                if (form) submitRename(form);
+            }
         });
     });
     
-    document.addEventListener('keydown', function(e) {
-        const modalElement = document.getElementById('previewModal');
-        if (!modalElement || !modalElement.classList.contains('show')) return;
+    // Renommage - soumission des formulaires
+    document.querySelectorAll('.rename-form').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            submitRename(form);
+        });
+    });
+    
+    // Copie de lien
+    document.querySelectorAll('.btn-copy-minimal').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const url = btn.getAttribute('data-url');
+            if (url) copyLink(url, btn);
+        });
+    });
+    
+    // Suppression de tag dans la ligne
+    document.querySelectorAll('.btn-remove-tag-row').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const path = btn.getAttribute('data-path');
+            const tag = btn.getAttribute('data-tag');
+            if (path && tag) removeTagFromRow(path, tag);
+        });
+    });
+    
+    // Ajout de tag
+    document.querySelectorAll('.btn-add-tag-row').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const path = btn.getAttribute('data-path');
+            if (path) showTagSelectorForRow(path);
+        });
+    });
+    
+    // Suppression de fichier
+    document.querySelectorAll('.delete-file-form').forEach(form => {
+        form.addEventListener('submit', (e) => {
+            if (!confirm('Supprimer ce fichier ?')) {
+                e.preventDefault();
+            }
+        });
+    });
+    
+    // Raccourcis clavier pour la modale
+    document.addEventListener('keydown', (e) => {
+        const modalEl = document.getElementById('previewModal');
+        if (!modalEl || !modalEl.classList.contains('show')) return;
         
-        if (e.key === "ArrowRight") {
-            e.preventDefault();
-            changeMedia(1);
-        }
-        if (e.key === "ArrowLeft") {
-            e.preventDefault();
-            changeMedia(-1);
-        }
-        if (e.key === "Escape" && previewModal) {
-            previewModal.hide();
-        }
+        if (e.key === "ArrowRight") { e.preventDefault(); if (typeof window.changeMedia === 'function') window.changeMedia(1); }
+        if (e.key === "ArrowLeft") { e.preventDefault(); if (typeof window.changeMedia === 'function') window.changeMedia(-1); }
+        if (e.key === "Escape" && window.previewModal) window.previewModal.hide();
     });
     
+    // Nettoyage modale
+    const modalElement = document.getElementById('previewModal');
     if (modalElement) {
-        modalElement.addEventListener('hidden.bs.modal', function() {
+        modalElement.addEventListener('hidden.bs.modal', () => {
             const modalContent = document.getElementById('modalMediaContent');
             if (modalContent) modalContent.innerHTML = '';
         });
     }
 });
 
-// Exposer les fonctions globalement
-window.openModal = openModal;
-window.changeMedia = changeMedia;
-window.modalCopyAction = modalCopyAction;
-window.confirmFolderDelete = confirmFolderDelete;
+// Exposer les fonctions
 window.copyLink = copyLink;
+window.confirmFolderDelete = confirmFolderDelete;
+window.removeTagFromRow = removeTagFromRow;
+window.addTagToRow = addTagToRow;
+window.showTagSelectorForRow = showTagSelectorForRow;
+window.submitRename = submitRename;
 window.filterFiles = filterFiles;
-window.removeTag = removeTag;
-window.addTag = addTag;
-window.showTagSelector = showTagSelector;
+window.escapeHtml = escapeHtml;

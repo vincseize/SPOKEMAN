@@ -58,6 +58,7 @@ if (isset($_POST['rename_folder']) && !empty($_POST['new_folder_name'])) {
 }
 
 if (isset($_POST['rename_file']) && !empty($_POST['new_name'])) {
+    error_log("Rename file: " . $_POST['file_path'] . " -> " . $_POST['new_name']);
     $oldPath = $_POST['file_path'];
     if (file_exists($oldPath)) {
         $info = pathinfo($oldPath);
@@ -69,7 +70,12 @@ if (isset($_POST['rename_file']) && !empty($_POST['new_name'])) {
                 unset($mediaTags[$oldPath]);
                 file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE));
             }
+            error_log("Fichier renommé avec succès: " . $newPath);
+        } else {
+            error_log("Le fichier destination existe déjà: " . $newPath);
         }
+    } else {
+        error_log("Le fichier source n'existe pas: " . $oldPath);
     }
     header("Location: admin.php"); exit;
 }
@@ -244,31 +250,21 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
                         <?php endif; ?>
                     </div>
                     
-                    <!-- Infos fichier + tags -->
+<!-- Infos fichier + tags -->
 <div class="flex-grow-1 min-width-0">
     <div class="d-flex align-items-center gap-2 mb-1">
-        <div class="rename-container d-flex align-items-center flex-grow-1">
-            <form method="post" class="d-flex align-items-center gap-1 m-0 flex-grow-1" id="rename-form-<?= md5($path) ?>" onsubmit="event.stopPropagation();">
+        <div class="rename-wrapper" style="flex-grow: 1;">
+            <form method="post" class="m-0 rename-form" data-path="<?= htmlspecialchars($path) ?>">
                 <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
+                <input type="hidden" name="rename_file" value="1">
                 <input type="text" name="new_name" class="rename-input form-control form-control-sm" 
-                       style="width: auto; min-width: 150px;" 
-                       value="<?= htmlspecialchars(pathinfo($file, PATHINFO_FILENAME)) ?>"
-                       onfocus="event.stopPropagation();"
-                       onclick="event.stopPropagation();"
-                       onkeydown="if(event.key === 'Enter') { this.form.submit(); return false; }">
-                <button type="submit" name="rename_file" class="btn-validate" title="Valider" 
-                        onclick="event.stopPropagation();"
-                        style="background: none; border: none; cursor: pointer; padding: 4px 8px;">
-                    ✅
-                </button>
+                       style="width: 100%; min-width: 150px;" 
+                       value="<?= htmlspecialchars(pathinfo($file, PATHINFO_FILENAME)) ?>">
             </form>
-            <button type="button" class="btn-rename" onclick="event.stopPropagation(); this.previousElementSibling.querySelector('.rename-input').focus();" title="Renommer">
-                ✏️
-            </button>
         </div>
         
         <button type="button" class="btn-copy-minimal btn btn-sm btn-outline-secondary border-0" 
-                onclick="event.stopPropagation(); copyLink('<?= htmlspecialchars($fullUrl) ?>', this)" 
+                data-url="<?= htmlspecialchars($fullUrl) ?>" 
                 title="Copier le lien">
             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
@@ -276,31 +272,32 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
             </svg>
         </button>
         
-        <form method="post" onsubmit="return confirm('Supprimer ?');" onclick="event.stopPropagation();">
+        <form method="post" class="delete-file-form" onsubmit="return confirm('Supprimer ?');" onclick="event.stopPropagation();">
             <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
             <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0 opacity-50" title="Supprimer">✕</button>
         </form>
     </div>
     
-    <!-- Tags (inchangé) -->
-    <div class="tag-checkbox-container d-flex flex-wrap gap-2 align-items-center mt-1">
-        <form method="post" class="m-0 d-flex flex-wrap gap-2 tag-auto-form" onclick="event.stopPropagation();">
-            <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
-            <input type="hidden" name="update_media_tags" value="1">
-            <?php foreach ($tagNamesList as $tagName): 
-                $tagColor = $tagColors[$tagName] ?? '#0d6efd';
-                $uniqueId = md5($path . $tagName);
+    <!-- TAGS -->
+    <div class="d-flex flex-wrap gap-2 align-items-center mt-1">
+        <?php if (!empty($currentFileTags)): ?>
+            <?php foreach ($currentFileTags as $tagName): 
+                $tagColor = $tagColors[$tagName] ?? '#6c757d';
             ?>
-                <div class="tag-check-item">
-                    <input type="checkbox" name="tags[]" value="<?= htmlspecialchars($tagName) ?>" 
-                           id="tag-<?= $uniqueId ?>" class="tag-input-checkbox" 
-                           <?= in_array($tagName, $currentFileTags) ? 'checked' : '' ?>>
-                    <label for="tag-<?= $uniqueId ?>" class="tag-label-checkbox" style="font-size: 0.65rem; padding: 2px 8px; background: <?= $tagColor ?>; color: white; border-color: <?= $tagColor ?>;">
-                        <?= htmlspecialchars($tagName) ?>
-                    </label>
+                <div class="tag-item" style="background: <?= $tagColor ?>; color: white;">
+                    <span>#<?= htmlspecialchars($tagName) ?></span>
+                    <button type="button" class="btn-remove-tag-row" data-path="<?= htmlspecialchars($path) ?>" data-tag="<?= htmlspecialchars($tagName) ?>">
+                        ✕
+                    </button>
                 </div>
             <?php endforeach; ?>
-        </form>
+        <?php else: ?>
+            <span class="text-muted small">Aucun tag</span>
+        <?php endif; ?>
+        
+        <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="<?= htmlspecialchars($path) ?>">
+            + Ajouter
+        </button>
     </div>
 </div>
                 </div>
@@ -321,16 +318,19 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
     </div>
 
     <!-- Modale -->
-    <?php if(file_exists('admin-modal.php')) include 'admin-modal.php'; ?>
-    
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<?php if(file_exists('admin-modal.php')) include 'admin-modal.php'; ?>
 
-    <script>
-        // Injecter les couleurs des tags depuis PHP
-        window.tagColors = <?= json_encode($tagColors) ?>;
-        console.log("Tag colors chargées:", window.tagColors);
-    </script>
-    <script src="js/admin.js?<?= time() ?>"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+<script>
+    // Injecter les couleurs des tags depuis PHP
+    window.tagColors = <?= json_encode($tagColors) ?>;
+    console.log("Tag colors chargées:", window.tagColors);
+</script>
+
+<!-- Charger d'abord admin-modal.js puis admin.js -->
+<script src="js/admin-modal.js?<?= time() ?>"></script>
+<script src="js/admin.js?<?= time() ?>"></script>
 
 </body>
 </html>

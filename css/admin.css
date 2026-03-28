@@ -3,21 +3,34 @@
    ========================================================================== */
 
 /* ==========================================================================
+   VARIABLES
+   ========================================================================== */
+:root {
+    --border-color: #ddd;
+    --light-gray: #f8f9fa;
+    --modal-bg: #fff;
+    --dark: #333;
+    --primary: #0d6efd;
+    --success: #198754;
+    --muted: #6c757d;
+}
+
+/* ==========================================================================
    BLOCS DOSSIERS
    ========================================================================== */
 .folder-block {
     margin-bottom: 30px;
-    border: 1px solid var(--border-color, #ddd);
+    border: 1px solid var(--border-color);
     border-radius: 8px;
     overflow: hidden;
 }
 
 .folder-title {
-    background: var(--light-gray, #f8f9fa);
+    background: var(--light-gray);
     padding: 12px 15px;
     font-weight: bold;
     font-size: 1.1rem;
-    border-bottom: 1px solid var(--border-color, #ddd);
+    border-bottom: 1px solid var(--border-color);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -33,11 +46,10 @@
     gap: 0;
 }
 
-/* Mode ligne pour les fichiers */
 .file-item-row {
     transition: background 0.2s ease;
-    cursor: pointer;
-    border-bottom: 1px solid var(--border-color, #eee);
+    cursor: default; /* Curseur normal sur toute la ligne */
+    border-bottom: 1px solid var(--border-color);
 }
 
 .file-item-row:last-child {
@@ -45,118 +57,105 @@
 }
 
 .file-item-row:hover {
-    background-color: #f8f9fa;
+    background-color: var(--light-gray);
 }
 
-/* Garder les styles existants pour les tags */
-.tag-check-item {
+/* ==========================================================================
+   CURSEUR - Uniquement sur la vignette
+   ========================================================================== */
+.preview-trigger {
+    cursor: pointer;
+}
+
+/* ==========================================================================
+   RENOMMAGE - STYLES AVEC ICÔNES DANS L'INPUT
+   ========================================================================== */
+.rename-wrapper {
     position: relative;
-    display: inline-block;
+    flex-grow: 1;
 }
 
-.tag-input-checkbox {
-    position: absolute;
-    opacity: 0;
-    cursor: pointer;
-    height: 0;
-    width: 0;
-}
-
-.tag-label-checkbox {
-    font-size: 0.65rem;
-    font-weight: 500;
-    padding: 2px 8px;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
-    display: inline-block;
-    border: 1px solid transparent;
-}
-
-.tag-input-checkbox:checked + .tag-label-checkbox {
-    filter: brightness(0.9);
-    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
-}
-
-/* Input de renommage */
 .rename-input {
     border: none;
-    border-bottom: 1px dashed #ddd;
+    border-bottom: 1px dashed var(--border-color);
     background: transparent;
     font-size: 0.85rem;
     padding: 4px 6px;
-    width: auto;
+    padding-right: 28px;
+    width: 100%;
     min-width: 150px;
+    transition: all 0.2s ease;
+    background-repeat: no-repeat;
+    background-position: right 6px center;
+    background-size: 14px;
 }
 
+/* Pas d'icône par défaut */
+.rename-input {
+    background-image: none;
+}
+
+/* Icône crayon au survol du conteneur */
+.rename-wrapper:hover .rename-input {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236c757d' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17 3l4 4-7 7H10v-4l7-7z'%3E%3C/path%3E%3Cpath d='M4 20l4-4'%3E%3C/path%3E%3C/svg%3E");
+}
+
+/* Icône coche verte au focus */
 .rename-input:focus {
     outline: none;
-    border-bottom-color: #0d6efd;
-    background: #fff;
+    border-bottom-color: var(--success);
+    background-color: #fff;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23198754' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E") !important;
 }
 
-.btn-save {
-    opacity: 0;
-    transition: opacity 0.2s;
-    background: none;
-    border: none;
-    cursor: pointer;
-}
-
-.file-item-row:hover .btn-save {
-    opacity: 1;
-}
-
+/* ==========================================================================
+   BOUTONS
+   ========================================================================== */
 .btn-copy-minimal {
     background: none;
     border: none;
     padding: 4px 8px;
-    color: #6c757d;
+    color: var(--muted);
     cursor: pointer;
     transition: color 0.2s;
 }
 
 .btn-copy-minimal:hover {
-    color: #0d6efd;
-}
-
-.hover-bg-light:hover {
-    background-color: #f8f9fa;
-}
-
-/* ==========================================================================
-   APERÇU DES FICHIERS (pour l'ancien mode grid, peut être supprimé)
-   ========================================================================== */
-.file-thumb {
-    width: 100%;
-    height: 100px;
-    object-fit: cover;
-    border-radius: 4px;
-    margin-bottom: 8px;
-}
-
-.file-name {
-    font-size: 0.75rem;
-    word-break: break-all;
-    margin-bottom: 8px;
-    color: var(--dark, #333);
+    color: var(--primary);
 }
 
 /* ==========================================================================
    TAGS
    ========================================================================== */
-.tag-badge {
-    display: inline-block;
-    font-size: 0.65rem;
-    padding: 2px 8px;
-    margin: 2px;
+.tag-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     border-radius: 4px;
-    transition: opacity 0.2s ease;
+    padding: 2px 6px 2px 10px;
+    font-size: 0.7rem;
+    font-weight: 500;
 }
 
-.tag-badge:hover {
-    opacity: 0.8;
+.btn-remove-tag-row {
+    background: none;
+    border: none;
+    color: white;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 0 4px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+}
+
+.btn-remove-tag-row:hover {
+    opacity: 1;
+}
+
+.btn-add-tag-row {
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    border-radius: 4px;
 }
 
 /* ==========================================================================
@@ -166,7 +165,7 @@
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    background: var(--modal-bg, #fff);
+    background: var(--modal-bg);
     border-radius: 50%;
     width: 50px;
     height: 50px;
@@ -180,11 +179,11 @@
     cursor: pointer;
     font-size: 1.5rem;
     font-weight: bold;
-    color: var(--dark, #333);
+    color: var(--dark);
 }
 
 .nav-btn:hover {
-    background: var(--light-gray, #f8f9fa);
+    background: var(--light-gray);
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
 }
 
@@ -222,7 +221,6 @@
         text-align: center;
     }
     
-    /* Mode ligne reste en colonne sur mobile */
     .file-item-row .d-flex {
         flex-wrap: wrap;
     }
@@ -230,18 +228,15 @@
     .file-item-row .preview-trigger {
         margin-bottom: 8px;
     }
+    
+    .rename-input {
+        min-width: 120px;
+    }
 }
 
 /* ==========================================================================
-   UTILITAIRES
+   ANIMATIONS
    ========================================================================== */
-.text-truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-}
-
-/* Animation douce pour l'apparition */
 @keyframes fadeIn {
     from {
         opacity: 0;
@@ -255,97 +250,4 @@
 
 .folder-block {
     animation: fadeIn 0.3s ease-out;
-}
-
-/* ==========================================================================
-   RENOMMAGE - STYLES AMÉLIORÉS
-   ========================================================================== */
-
-/* Conteneur du champ de renommage */
-.rename-container {
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    flex-grow: 1;
-}
-
-/* Input de renommage */
-.rename-input {
-    border: none;
-    border-bottom: 1px dashed #ddd;
-    background: transparent;
-    font-size: 0.85rem;
-    padding: 4px 6px;
-    width: auto;
-    min-width: 150px;
-    transition: all 0.2s ease;
-}
-
-.rename-input:focus {
-    outline: none;
-    border-bottom-color: #198754;
-    background: #fff;
-    box-shadow: none;
-}
-
-/* Bouton de renommage (crayon) */
-.btn-rename {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 8px;
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-/* Afficher le crayon au survol de la ligne */
-.file-item-row:hover .btn-rename {
-    opacity: 1;
-}
-
-.btn-rename:hover {
-    color: #0d6efd;
-    transform: scale(1.05);
-}
-
-/* Bouton de validation (coche verte) */
-.btn-validate {
-    opacity: 0;
-    transition: opacity 0.2s ease;
-    background: none;
-    border: none;
-    cursor: pointer;
-    padding: 4px 8px;
-    font-size: 0.9rem;
-    color: #198754;
-}
-
-/* Afficher la coche quand l'input est focus */
-.rename-input:focus + .btn-validate,
-.rename-input:focus ~ .btn-validate {
-    opacity: 1;
-}
-
-.btn-validate:hover {
-    color: #0d6efd;
-    transform: scale(1.05);
-}
-
-/* Cacher le crayon quand l'input est focus */
-.rename-input:focus ~ .btn-rename,
-.rename-input:focus + .btn-rename {
-    opacity: 0 !important;
-}
-
-/* Animation de validation */
-@keyframes validatePulse {
-    0% { transform: scale(1); }
-    50% { transform: scale(1.2); }
-    100% { transform: scale(1); }
-}
-
-.btn-validate:active {
-    animation: validatePulse 0.2s ease;
 }
