@@ -1,67 +1,247 @@
-/**
- * GESTION DE LA GALERIE & MODALE
- */
-const previewModalElement = document.getElementById('previewModal');
-const previewModal = new bootstrap.Modal(previewModalElement);
-const modalContent = document.getElementById('modalMediaContent');
-const modalFileName = document.getElementById('modalFileName');
-const modalDeletePath = document.getElementById('modalDeletePath');
-const modalCopyBtn = document.getElementById('modalCopyBtn');
+console.log("admin.js chargé");
 
 let currentGallery = [];
 let currentIndex = 0;
+let previewModal = null;
+let currentFilePath = null;
+// Récupérer les couleurs depuis la variable globale injectée par PHP
+let tagColors = window.tagColors || {};
 
-function initGallery(triggerElement) {
-    // 1. On trouve le conteneur du dossier (la liste de fichiers)
-    const folderContainer = triggerElement.closest('.list-group');
+// OUVERTURE DE LA MODALE
+function openModal(path, url, ext, fileName) {
+    console.log("Ouverture modale:", path);
+    currentFilePath = path;
     
-    // 2. On récupère UNIQUEMENT les fichiers de CE dossier qui ne sont pas cachés par le filtre
-    const visibleTriggersInFolder = Array.from(folderContainer.querySelectorAll('.file-item:not([style*="display: none"]) .preview-trigger'));
+    // Récupérer le dossier du fichier cliqué
+    const clickedCard = document.querySelector(`.file-item-row[data-path="${path}"]`);
+    if (!clickedCard) {
+        console.error("Carte non trouvée pour le chemin:", path);
+        return;
+    }
+    const clickedFolder = clickedCard.getAttribute('data-folder');
+    console.log("Dossier du fichier cliqué:", clickedFolder);
     
-    // 3. On construit la galerie avec ces fichiers uniquement
-    currentGallery = visibleTriggersInFolder.map(el => ({ 
-        path: el.dataset.path, 
-        url: el.dataset.url, 
-        ext: el.dataset.ext 
-    }));
-
-    // 4. On trouve l'index de l'image cliquée dans cette nouvelle liste restreinte
-    currentIndex = currentGallery.findIndex(item => item.path === triggerElement.dataset.path);
+    // Filtrer les cartes pour ne garder que celles du même dossier
+    const allCards = document.querySelectorAll('.file-item-row');
+    const filteredCards = Array.from(allCards).filter(card => {
+        return card.getAttribute('data-folder') === clickedFolder;
+    });
     
-    if (currentIndex === -1) return; 
+    console.log("Cartes du dossier:", filteredCards.length);
     
-    updateModal();
-    previewModal.show();
+    currentGallery = filteredCards.map(card => {
+        const tagsAttr = card.getAttribute('data-tags');
+        const tags = tagsAttr && tagsAttr.trim() !== '' ? tagsAttr.split(' ') : [];
+        
+        return {
+            path: card.getAttribute('data-path'),
+            url: card.getAttribute('data-url'),
+            ext: card.getAttribute('data-ext'),
+            fileName: card.getAttribute('data-filename'),
+            tags: tags
+        };
+    });
+    
+    console.log("Galerie construite avec", currentGallery.length, "fichiers");
+    
+    currentIndex = currentGallery.findIndex(item => item.path === path);
+    if (currentIndex === -1) currentIndex = 0;
+    
+    updateModalContent();
+    
+    if (previewModal) {
+        previewModal.show();
+    }
 }
 
-function updateModal() {
+// AFFICHER LES TAGS DANS LA MODALE
+function displayModalTags(filePath, tags) {
+    const container = document.getElementById('modalTagsList');
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (!tags || tags.length === 0) {
+        container.innerHTML = '<span class="text-muted small">Aucun tag</span>';
+        return;
+    }
+    
+    tags.forEach(tag => {
+        const tagColor = tagColors[tag] || '#6c757d';
+        const tagElement = document.createElement('div');
+        tagElement.className = 'tag-item d-flex align-items-center gap-1';
+        tagElement.style.background = tagColor;
+        tagElement.style.color = 'white';
+        tagElement.style.borderRadius = '4px';
+        tagElement.style.padding = '2px 6px 2px 10px';
+        tagElement.style.fontSize = '0.7rem';
+        tagElement.style.fontWeight = '500';
+        
+        tagElement.innerHTML = `
+            <span>#${escapeHtml(tag)}</span>
+            <button type="button" class="btn-remove-tag" onclick="window.removeTag('${escapeHtml(tag)}')" 
+                    style="background: none; border: none; color: white; cursor: pointer; font-size: 0.8rem; padding: 0 4px; opacity: 0.7;"
+                    onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">
+                ✕
+            </button>
+        `;
+        container.appendChild(tagElement);
+    });
+}
+
+// SUPPRIMER UN TAG
+function removeTag(tagName) {
+    if (!confirm(`Retirer le tag "${tagName}" ?`)) return;
+    
+    const formData = new FormData();
+    formData.append('file_path', currentFilePath);
+    formData.append('remove_tag', tagName);
+    formData.append('update_media_tags', '1');
+    
+    fetch('admin.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Mettre à jour les tags dans la galerie
+            const currentItem = currentGallery[currentIndex];
+            if (currentItem) {
+                const updatedTags = currentItem.tags.filter(t => t !== tagName);
+                currentItem.tags = updatedTags;
+                displayModalTags(currentFilePath, updatedTags);
+                
+                // Mettre à jour l'attribut data-tags dans la carte
+                const card = document.querySelector(`.file-item-row[data-path="${currentFilePath}"]`);
+                if (card) {
+                    card.setAttribute('data-tags', updatedTags.join(' ').toLowerCase());
+                    const tagsContainer = card.querySelector('.file-tags');
+                    if (tagsContainer) {
+                        tagsContainer.innerHTML = updatedTags.map(t => `<span class="tag-badge" style="background: ${tagColors[t] || '#6c757d'};">#${t}</span>`).join('');
+                    }
+                }
+            }
+        }
+    })
+    .catch(err => console.error('Erreur suppression tag:', err));
+}
+
+// AFFICHER LE SÉLECTEUR DE TAGS
+function showTagSelector() {
+    const currentItem = currentGallery[currentIndex];
+    const currentTags = currentItem?.tags || [];
+    
+    // Tags disponibles (ceux qui ne sont pas déjà attribués)
+    const availableTags = Object.keys(tagColors).filter(tag => !currentTags.includes(tag));
+    
+    const container = document.getElementById('availableTagsList');
+    if (!container) return;
+    
+    if (availableTags.length === 0) {
+        container.innerHTML = '<div class="text-muted text-center">Aucun tag disponible</div>';
+    } else {
+        container.innerHTML = availableTags.map(tag => {
+            const tagColor = tagColors[tag] || '#6c757d';
+            return `
+                <button type="button" class="btn btn-sm" 
+                        onclick="window.addTag('${escapeHtml(tag)}')"
+                        style="background: ${tagColor}; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                    #${escapeHtml(tag)}
+                </button>
+            `;
+        }).join('');
+    }
+    
+    const modal = new bootstrap.Modal(document.getElementById('tagSelectorModal'));
+    modal.show();
+}
+
+// AJOUTER UN TAG
+function addTag(tagName) {
+    const formData = new FormData();
+    formData.append('file_path', currentFilePath);
+    formData.append('add_tag', tagName);
+    formData.append('update_media_tags', '1');
+    
+    fetch('admin.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Mettre à jour les tags dans la galerie
+            const currentItem = currentGallery[currentIndex];
+            if (currentItem) {
+                const updatedTags = [...currentItem.tags, tagName];
+                currentItem.tags = updatedTags;
+                displayModalTags(currentFilePath, updatedTags);
+                
+                // Mettre à jour l'attribut data-tags dans la carte
+                const card = document.querySelector(`.file-item-row[data-path="${currentFilePath}"]`);
+                if (card) {
+                    card.setAttribute('data-tags', updatedTags.join(' ').toLowerCase());
+                    const tagsContainer = card.querySelector('.file-tags');
+                    if (tagsContainer) {
+                        tagsContainer.innerHTML = updatedTags.map(t => `<span class="tag-badge" style="background: ${tagColors[t] || '#6c757d'};">#${t}</span>`).join('');
+                    }
+                }
+                
+                // Fermer la modale de sélection
+                const selectorModal = bootstrap.Modal.getInstance(document.getElementById('tagSelectorModal'));
+                if (selectorModal) selectorModal.hide();
+            }
+        }
+    })
+    .catch(err => console.error('Erreur ajout tag:', err));
+}
+
+// MISE À JOUR MODALE
+function updateModalContent() {
     const item = currentGallery[currentIndex];
-    if(!item) return;
-
-    modalContent.innerHTML = '';
+    if (!item) return;
+    
+    const modalContent = document.getElementById('modalMediaContent');
+    const modalFileName = document.getElementById('modalFileName');
+    const modalDeletePath = document.getElementById('modalDeletePath');
+    const modalCopyBtn = document.getElementById('modalCopyBtn');
     const specsElem = document.getElementById('modalMediaSpecs');
-    specsElem.innerHTML = 'chargement...'; // Reset des specs
     
-    // Nom et compteur en haut
-    modalFileName.innerHTML = `<span class="badge bg-dark me-2">${currentIndex + 1} / ${currentGallery.length}</span> ${item.path.split('/').pop()}`;
+    if (!modalContent) return;
     
-    modalDeletePath.value = item.path;
-    modalCopyBtn.dataset.copyUrl = item.url;
-    modalCopyBtn.innerText = "📋 Copier";
-
+    modalContent.innerHTML = '';
+    
+    if (modalFileName) {
+        modalFileName.innerHTML = `<span class="badge bg-dark me-2">${currentIndex + 1} / ${currentGallery.length}</span> ${item.fileName || item.path.split('/').pop()}`;
+    }
+    
+    if (modalDeletePath) {
+        modalDeletePath.value = item.path;
+    }
+    
+    if (modalCopyBtn) {
+        modalCopyBtn.dataset.copyUrl = item.url;
+        modalCopyBtn.innerText = "📋 Copier";
+    }
+    
     const imgExts = ['jpg', 'jpeg', 'png', 'gif', 'webp'];
     const videoExts = ['mp4', 'webm', 'mov'];
-
+    
     if (imgExts.includes(item.ext)) {
         const img = new Image();
         img.src = item.path;
         img.className = "img-fluid shadow rounded";
         img.style.maxHeight = "65vh";
         img.onload = function() {
-            fetch(item.path).then(r => r.blob()).then(blob => {
-                const size = (blob.size / 1024).toFixed(1) + ' KB';
-                specsElem.innerHTML = `${img.naturalWidth}x${img.naturalHeight} px | ${size}`;
-            });
+            if (specsElem) {
+                fetch(item.path).then(r => r.blob()).then(blob => {
+                    const size = (blob.size / 1024).toFixed(1) + ' KB';
+                    specsElem.innerHTML = `${img.naturalWidth}x${img.naturalHeight} px | ${size}`;
+                }).catch(() => {
+                    specsElem.innerHTML = `${img.naturalWidth}x${img.naturalHeight} px`;
+                });
+            }
         };
         modalContent.appendChild(img);
     } else if (videoExts.includes(item.ext)) {
@@ -71,186 +251,186 @@ function updateModal() {
         video.autoplay = true;
         video.className = "w-100 shadow rounded";
         video.style.maxHeight = "65vh";
-        video.onloadedmetadata = function() {
-            fetch(item.path).then(r => r.blob()).then(blob => {
-                const size = (blob.size / (1024 * 1024)).toFixed(2) + ' MB';
-                const duration = Math.floor(video.duration / 60) + ":" + ("0" + Math.floor(video.duration % 60)).slice(-2);
-                specsElem.innerHTML = `Vidéo | ${duration} min | ${size}`;
-            });
-        };
+        if (specsElem) specsElem.innerHTML = "Vidéo";
         modalContent.appendChild(video);
     } else {
         modalContent.innerHTML = `<div class="p-5 bg-light rounded border text-center"><h1 class="display-1">📄</h1><h5>.${item.ext.toUpperCase()}</h5></div>`;
-        specsElem.innerHTML = "Fichier document";
+        if (specsElem) specsElem.innerHTML = "Fichier document";
     }
-
-    syncModalTags(item.path);
+    
+    // Afficher les tags
+    displayModalTags(item.path, item.tags || []);
 }
 
-/**
- * SYNCHRONISATION DES TAGS (MODALE <-> LISTE)
- */
-function syncModalTags(filePath) {
-    // 1. Trouver l'élément parent dans la liste principale qui correspond au fichier
-    // On cherche l'input qui contient le chemin du fichier
-    const mainForm = document.querySelector(`form.tag-auto-form input[value="${filePath}"]`)?.closest('.tag-auto-form');
-    if (!mainForm) return;
-
-    const mainFileItem = mainForm.closest('.file-item');
-
-    // 2. Récupérer les tags cochés dans la liste
-    const activeTags = Array.from(mainForm.querySelectorAll('.tag-input-checkbox:checked')).map(cb => cb.value);
-
-    // 3. Mettre à jour les checkbox de la modale
-    document.querySelectorAll('.modal-tag-sync').forEach(modalCb => {
-        // Cocher si présent dans la liste
-        modalCb.checked = activeTags.includes(modalCb.value);
-        
-        // Au clic sur un tag de la modale
-        modalCb.onchange = function() {
-            // Trouver la checkbox correspondante dans la liste principale
-            const mainCb = mainForm.querySelector(`.tag-input-checkbox[value="${this.value}"]`);
-            if (mainCb) {
-                mainCb.checked = this.checked;
-                // Déclencher l'événement 'change' sur la checkbox principale pour activer l'auto-save AJAX
-                mainCb.dispatchEvent(new Event('change', { bubbles: true }));
-            }
-        };
-    });
-}
-
+// NAVIGATION
 function changeMedia(direction, event) {
-    if(event) { event.preventDefault(); event.stopPropagation(); }
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
     if (currentGallery.length <= 1) return;
     
     currentIndex += direction;
     if (currentIndex < 0) currentIndex = currentGallery.length - 1;
     if (currentIndex >= currentGallery.length) currentIndex = 0;
     
-    updateModal();
+    currentFilePath = currentGallery[currentIndex].path;
+    updateModalContent();
 }
 
+// COPIER URL
 function modalCopyAction() {
-    const url = modalCopyBtn.dataset.copyUrl;
-    navigator.clipboard.writeText(url).then(() => {
-        modalCopyBtn.innerText = "✅ Copié !";
-        setTimeout(() => modalCopyBtn.innerText = "📋 Copier l'URL", 2000);
-    });
-}
-
-/**
- * RECHERCHE & FILTRAGE
- */
-function filterFiles() {
-    const input = document.getElementById('searchInput').value.toLowerCase();
+    const modalCopyBtn = document.getElementById('modalCopyBtn');
+    if (!modalCopyBtn) return;
     
-    document.querySelectorAll('.folder-card').forEach(card => {
-        const folderName = card.getAttribute('data-folder-name') || "";
-        const files = card.querySelectorAll('.file-item');
-        let folderHasMatch = false;
-
-        files.forEach(file => {
-            const fileName = file.getAttribute('data-file-name') || "";
-            const fileTags = file.getAttribute('data-tags') || "";
-            const isMatch = fileName.includes(input) || fileTags.includes(input);
-            
-            file.style.display = isMatch ? "flex" : "none";
-            if (isMatch) folderHasMatch = true;
-        });
-
-        const showFolder = folderName.includes(input) || folderHasMatch;
-        card.style.display = showFolder ? "block" : "none";
-
-        // Auto-expand des dossiers si on recherche activement
-        const collapseEl = card.querySelector('.accordion-collapse');
-        const bsCollapse = bootstrap.Collapse.getInstance(collapseEl) || new bootstrap.Collapse(collapseEl, {toggle: false});
-        
-        if (input.length > 1 && folderHasMatch) bsCollapse.show();
-        else if (input.length === 0) bsCollapse.hide();
-    });
-}
-
-/**
- * AUTO-SAVE DES TAGS (AJAX) 
- */
-document.addEventListener('submit', function(e) {
-    if (e.target.classList.contains('tag-auto-form')) { 
-        e.preventDefault(); 
-        return false; 
-    }
-});
-
-document.addEventListener('change', function(e) {
-    if (e.target.classList.contains('tag-input-checkbox')) {
-        const checkbox = e.target;
-        const label = checkbox.nextElementSibling;
-        const form = checkbox.closest('form');
-        const formData = new FormData(form);
-
-        // Feedback visuel (opacité réduite pendant l'envoi)
-        label.style.opacity = "0.4";
-
-        fetch(window.location.href, {
-            method: 'POST',
-            body: formData,
-            headers: { 'X-Requested-With': 'XMLHttpRequest' }
-        })
-        .then(response => {
-            if (response.ok) {
-                label.style.opacity = "1";
-                updateFileTagsAttribute(checkbox);
-            }
-        })
-        .catch(err => { 
-            console.error("Erreur de sauvegarde:", err); 
-            label.style.opacity = "1"; 
-        });
-    }
-});
-
-function updateFileTagsAttribute(checkbox) {
-    const fileItem = checkbox.closest('.file-item');
-    const checkedBoxes = fileItem.querySelectorAll('.tag-input-checkbox:checked');
-    const tagsArray = Array.from(checkedBoxes).map(cb => cb.value);
-    // On met à jour l'attribut data-tags pour que le filtre de recherche reste précis
-    fileItem.setAttribute('data-tags', tagsArray.join(' ').toLowerCase());
-}
-
-/**
- * UTILITAIRES & EVENTS
- */
-function copyLink(url, btn) {
+    const url = modalCopyBtn.dataset.copyUrl;
+    if (!url) return;
+    
     navigator.clipboard.writeText(url).then(() => {
-        const original = btn.innerHTML;
-        btn.innerHTML = "OK";
-        btn.classList.add('text-success');
+        const originalText = modalCopyBtn.innerText;
+        modalCopyBtn.innerText = "✅ Copié !";
         setTimeout(() => {
-            btn.innerHTML = original;
-            btn.classList.remove('text-success');
-        }, 1500);
+            modalCopyBtn.innerText = originalText;
+        }, 2000);
     });
 }
 
-function confirmFolderDelete(id, name) {
-    if (confirm(`Supprimer le dossier "${name}" et tout son contenu ?`) && confirm("⚠️ Cette action est irréversible !")) {
+// SUPPRESSION DOSSIER
+function confirmFolderDelete(path, name) {
+    if (confirm(`Supprimer le dossier "${name}" et tout son contenu ?`)) {
         const form = document.createElement('form');
         form.method = 'POST';
-        form.innerHTML = `<input type="hidden" name="folder_path" value="uploads/${name}"><input type="hidden" name="force_delete_folder" value="1">`;
+        form.innerHTML = `<input type="hidden" name="folder_path" value="${path}"><input type="hidden" name="force_delete_folder" value="1">`;
         document.body.appendChild(form);
         form.submit();
     }
 }
 
-// Raccourcis clavier
-document.addEventListener('keydown', (e) => {
-    if (!previewModalElement.classList.contains('show')) return;
+// COPIE LIEN
+function copyLink(url, btn) {
+    navigator.clipboard.writeText(url).then(() => {
+        const original = btn.innerHTML;
+        btn.innerHTML = "OK";
+        setTimeout(() => btn.innerHTML = original, 1500);
+    });
+}
+
+// FILTRAGE
+function filterFiles() {
+    console.log("filterFiles appelé");
+    const input = document.getElementById('searchInput');
+    if (!input) return;
+    const searchTerm = input.value.toLowerCase();
     
-    if (e.key === "ArrowRight") changeMedia(1);
-    if (e.key === "ArrowLeft") changeMedia(-1);
-    if (e.key === "Escape") previewModal.hide();
+    document.querySelectorAll('.file-item-row').forEach(row => {
+        const fileName = row.getAttribute('data-filename')?.toLowerCase() || "";
+        const fileTags = row.getAttribute('data-tags')?.toLowerCase() || "";
+        const isMatch = searchTerm === "" || fileName.includes(searchTerm) || fileTags.includes(searchTerm);
+        row.style.display = isMatch ? "" : "none";
+    });
+    
+    // Afficher/cacher les dossiers vides
+    document.querySelectorAll('.folder-block').forEach(block => {
+        const visibleRows = block.querySelectorAll('.file-item-row[style=""]');
+        block.style.display = visibleRows.length > 0 ? "" : "none";
+    });
+}
+
+// ESCAPE HTML
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+// INITIALISATION
+document.addEventListener('DOMContentLoaded', function() {
+    console.log("DOM chargé");
+    
+    const modalElement = document.getElementById('previewModal');
+    if (modalElement) {
+        previewModal = new bootstrap.Modal(modalElement);
+        console.log("Modale initialisée");
+    }
+    
+    const cards = document.querySelectorAll('.file-item-row');
+    console.log("Fichiers trouvés:", cards.length);
+    
+    cards.forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Ne pas déclencher si on clique sur un formulaire, bouton, input, ou zone de renommage
+            if (e.target.closest('form') || 
+                e.target.closest('button') || 
+                e.target.closest('input') || 
+                e.target.closest('.rename-container') ||
+                e.target.closest('.btn-rename') ||
+                e.target.closest('.btn-validate')) {
+                console.log("Clic ignoré (élément interactif)");
+                return;
+            }
+            e.stopPropagation();
+            const path = this.getAttribute('data-path');
+            const url = this.getAttribute('data-url');
+            const ext = this.getAttribute('data-ext');
+            const fileName = this.getAttribute('data-filename');
+            openModal(path, url, ext, fileName);
+        });
+    });
+    
+    // Empêcher la propagation des événements sur les inputs de renommage
+    document.querySelectorAll('.rename-input').forEach(input => {
+        input.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+        input.addEventListener('focus', function(e) {
+            e.stopPropagation();
+        });
+        input.addEventListener('keydown', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    // Empêcher la propagation sur les boutons de renommage
+    document.querySelectorAll('.btn-rename, .btn-validate').forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.stopPropagation();
+        });
+    });
+    
+    document.addEventListener('keydown', function(e) {
+        const modalElement = document.getElementById('previewModal');
+        if (!modalElement || !modalElement.classList.contains('show')) return;
+        
+        if (e.key === "ArrowRight") {
+            e.preventDefault();
+            changeMedia(1);
+        }
+        if (e.key === "ArrowLeft") {
+            e.preventDefault();
+            changeMedia(-1);
+        }
+        if (e.key === "Escape" && previewModal) {
+            previewModal.hide();
+        }
+    });
+    
+    if (modalElement) {
+        modalElement.addEventListener('hidden.bs.modal', function() {
+            const modalContent = document.getElementById('modalMediaContent');
+            if (modalContent) modalContent.innerHTML = '';
+        });
+    }
 });
 
-// Arrêter la vidéo si on ferme la modale
-previewModalElement.addEventListener('hidden.bs.modal', () => {
-    modalContent.innerHTML = '';
-});
+// Exposer les fonctions globalement
+window.openModal = openModal;
+window.changeMedia = changeMedia;
+window.modalCopyAction = modalCopyAction;
+window.confirmFolderDelete = confirmFolderDelete;
+window.copyLink = copyLink;
+window.filterFiles = filterFiles;
+window.removeTag = removeTag;
+window.addTag = addTag;
+window.showTagSelector = showTagSelector;

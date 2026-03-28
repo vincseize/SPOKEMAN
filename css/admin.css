@@ -1,135 +1,54 @@
 /* ==========================================================================
-   CONFIG & VARIABLES
-   css/admin.css
+   ADMIN.CSS - Styles pour l'interface d'administration
    ========================================================================== */
-:root {
-    --backdrop-bg: 0, 0, 0;
-    --backdrop-opacity: 0.85;
-    --modal-bg: #ffffff;
-    --modal-radius: 12px;
-    --modal-shadow: 0 25px 70px rgba(0,0,0,0.5);
-    --primary: #0d6efd;
-    --dark: #333;
-    --muted: #6c757d;
-    --light-gray: #f8f9fa;
-    --border-color: #dee2e6;
-    --nav-btn-size: 50px;
+
+/* ==========================================================================
+   BLOCS DOSSIERS
+   ========================================================================== */
+.folder-block {
+    margin-bottom: 30px;
+    border: 1px solid var(--border-color, #ddd);
+    border-radius: 8px;
+    overflow: hidden;
 }
 
-/* --- FORCE DESKTOP --- */
-html, body {
-    min-width: 1100px;
-    min-height: 100vh;
+.folder-title {
+    background: var(--light-gray, #f8f9fa);
+    padding: 12px 15px;
+    font-weight: bold;
+    font-size: 1.1rem;
+    border-bottom: 1px solid var(--border-color, #ddd);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-body {
+/* ==========================================================================
+   LISTE DES FICHIERS - MODE LIGNE UNIQUE
+   ========================================================================== */
+.file-list {
+    padding: 0;
     display: flex;
     flex-direction: column;
+    gap: 0;
 }
 
-.main-wrapper {
-    flex: 1;
-}
-
-/* --- UTILITAIRES --- */
-.hidden { display: none !important; }
-
-/* --- OVERLAY MODALE --- */
-.modal-backdrop.show {
-    background-color: rgb(var(--backdrop-bg));
-    opacity: var(--backdrop-opacity) !important;
-}
-
-/* --- ACCORDÉON & DOSSIERS --- */
-.accordion-item { 
-    border: none !important; 
-    border-radius: 8px !important; 
-    overflow: hidden; 
-    background: transparent;
-}
-
-.accordion-header {
-    border: 1px solid var(--border-color);
-    border-radius: 8px !important;
-}
-
-.folder-rename-input { 
-    font-weight: bold; 
-    color: var(--muted);
-    text-transform: uppercase;
-    font-size: 0.75rem;
-    letter-spacing: 0.05rem;
-    border: none; 
-    background: transparent; 
-    width: auto; 
-    padding: 2px 5px;
-    transition: all 0.2s;
-}
-
-.folder-rename-input:focus {
-    outline: none;
-    color: var(--primary);
-    background: rgba(13, 110, 253, 0.05);
-}
-
-/* --- FICHIERS & VIGNETTES --- */
-.file-item {
-    transition: background 0.15s ease;
-}
-
-.file-item:hover {
-    background-color: #fcfdfe !important;
-}
-
-.thumb-preview { 
-    width: 50px; height: 50px; object-fit: cover; border-radius: 6px; 
-    cursor: zoom-in; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
-}
-.thumb-preview:hover { transform: scale(1.1); }
-
-.icon-preview { 
-    width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; 
-    background: var(--light-gray); border-radius: 6px; font-size: 0.65rem; font-weight: bold; 
-    border: 1px solid var(--border-color); color: var(--muted); cursor: zoom-in;
-}
-
-.rename-input { 
-    border: none; 
-    border-bottom: 1px dashed transparent; 
-    background: transparent; 
-    font-size: 0.9rem; 
-    width: 100%; 
-}
-.rename-input:focus { outline: none; border-bottom-color: var(--primary); background: #fff; }
-
-.btn-save { 
-    opacity: 0; transition: opacity 0.2s; border: none; background: none; cursor: pointer; 
-}
-.file-item:hover .btn-save, .accordion-header:hover .btn-save { opacity: 1; }
-
-/* --- BOUTON COPIE MINIMALISTE --- */
-.btn-copy-minimal {
-    background: none;
-    border: none;
-    padding: 2px 6px;
-    color: var(--muted);
+/* Mode ligne pour les fichiers */
+.file-item-row {
+    transition: background 0.2s ease;
     cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    transition: color 0.2s;
+    border-bottom: 1px solid var(--border-color, #eee);
 }
 
-.btn-copy-minimal:hover {
-    color: var(--primary);
+.file-item-row:last-child {
+    border-bottom: none;
 }
 
-/* --- TAGS & MULTI-SELECT --- */
-.tag-checkbox-container {
-    background-color: rgba(0, 0, 0, 0.02);
-    border-radius: 4px;
-    padding: 6px 10px !important;
+.file-item-row:hover {
+    background-color: #f8f9fa;
 }
 
+/* Garder les styles existants pour les tags */
 .tag-check-item {
     position: relative;
     display: inline-block;
@@ -139,61 +58,294 @@ body {
     position: absolute;
     opacity: 0;
     cursor: pointer;
-    height: 0; width: 0;
+    height: 0;
+    width: 0;
 }
 
 .tag-label-checkbox {
     font-size: 0.65rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    background: #ffffff;
-    color: #6c757d;
+    font-weight: 500;
     padding: 2px 8px;
     border-radius: 4px;
-    border: 1px solid var(--border-color);
     cursor: pointer;
     transition: all 0.2s ease;
     user-select: none;
     display: inline-block;
+    border: 1px solid transparent;
 }
 
 .tag-input-checkbox:checked + .tag-label-checkbox {
-    background-color: var(--primary);
-    border-color: var(--primary);
-    color: #ffffff;
+    filter: brightness(0.9);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.1);
 }
 
-/* --- MODALE SLIDER --- */
-.modal-content { border-radius: var(--modal-radius); border: none; box-shadow: var(--modal-shadow); }
-#modalMediaContent img, #modalMediaContent video { 
-    max-width: 100%; max-height: 70vh; border-radius: 4px; 
-    box-shadow: 0 10px 30px rgba(0,0,0,0.2); animation: modalFadeIn 0.3s ease-out;
+/* Input de renommage */
+.rename-input {
+    border: none;
+    border-bottom: 1px dashed #ddd;
+    background: transparent;
+    font-size: 0.85rem;
+    padding: 4px 6px;
+    width: auto;
+    min-width: 150px;
 }
 
-@keyframes modalFadeIn { 
-    from { opacity: 0; transform: scale(0.95); } 
-    to { opacity: 1; transform: scale(1); } 
+.rename-input:focus {
+    outline: none;
+    border-bottom-color: #0d6efd;
+    background: #fff;
 }
 
-.nav-btn { 
-    position: absolute; top: 50%; transform: translateY(-50%); 
-    background: white; border-radius: 50%; width: var(--nav-btn-size); height: var(--nav-btn-size); 
-    display: flex; align-items: center; justify-content: center; 
-    box-shadow: 0 4px 15px rgba(0,0,0,0.3); z-index: 2000; border: none;
-    transition: all 0.2s;
+.btn-save {
+    opacity: 0;
+    transition: opacity 0.2s;
+    background: none;
+    border: none;
+    cursor: pointer;
 }
-.nav-btn:hover { background: var(--light-gray); transform: translateY(-50%) scale(1.1); }
 
-.nav-prev { left: -75px; }
-.nav-next { right: -75px; }
+.file-item-row:hover .btn-save {
+    opacity: 1;
+}
 
+.btn-copy-minimal {
+    background: none;
+    border: none;
+    padding: 4px 8px;
+    color: #6c757d;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.btn-copy-minimal:hover {
+    color: #0d6efd;
+}
+
+.hover-bg-light:hover {
+    background-color: #f8f9fa;
+}
+
+/* ==========================================================================
+   APERÇU DES FICHIERS (pour l'ancien mode grid, peut être supprimé)
+   ========================================================================== */
+.file-thumb {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    border-radius: 4px;
+    margin-bottom: 8px;
+}
+
+.file-name {
+    font-size: 0.75rem;
+    word-break: break-all;
+    margin-bottom: 8px;
+    color: var(--dark, #333);
+}
+
+/* ==========================================================================
+   TAGS
+   ========================================================================== */
+.tag-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    margin: 2px;
+    border-radius: 4px;
+    transition: opacity 0.2s ease;
+}
+
+.tag-badge:hover {
+    opacity: 0.8;
+}
+
+/* ==========================================================================
+   BOUTONS DE NAVIGATION MODALE
+   ========================================================================== */
+.nav-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--modal-bg, #fff);
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    z-index: 2000;
+    border: none;
+    transition: background 0.2s ease, box-shadow 0.2s ease;
+    cursor: pointer;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--dark, #333);
+}
+
+.nav-btn:hover {
+    background: var(--light-gray, #f8f9fa);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.nav-prev {
+    left: -75px;
+}
+
+.nav-next {
+    right: -75px;
+}
+
+/* ==========================================================================
+   RESPONSIVE
+   ========================================================================== */
 @media (max-width: 1300px) {
-    .nav-prev { left: 15px; }
-    .nav-next { right: 15px; }
+    .nav-prev {
+        left: 15px;
+    }
+    
+    .nav-next {
+        right: 15px;
+    }
+    
+    .nav-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 1.2rem;
+    }
 }
 
-/* --- SCROLLBAR --- */
-::-webkit-scrollbar { width: 8px; }
-::-webkit-scrollbar-track { background: #f1f1f1; }
-::-webkit-scrollbar-thumb { background: #ccc; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #999; }
+@media (max-width: 768px) {
+    .folder-title {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+    
+    /* Mode ligne reste en colonne sur mobile */
+    .file-item-row .d-flex {
+        flex-wrap: wrap;
+    }
+    
+    .file-item-row .preview-trigger {
+        margin-bottom: 8px;
+    }
+}
+
+/* ==========================================================================
+   UTILITAIRES
+   ========================================================================== */
+.text-truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Animation douce pour l'apparition */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.folder-block {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* ==========================================================================
+   RENOMMAGE - STYLES AMÉLIORÉS
+   ========================================================================== */
+
+/* Conteneur du champ de renommage */
+.rename-container {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+/* Input de renommage */
+.rename-input {
+    border: none;
+    border-bottom: 1px dashed #ddd;
+    background: transparent;
+    font-size: 0.85rem;
+    padding: 4px 6px;
+    width: auto;
+    min-width: 150px;
+    transition: all 0.2s ease;
+}
+
+.rename-input:focus {
+    outline: none;
+    border-bottom-color: #198754;
+    background: #fff;
+    box-shadow: none;
+}
+
+/* Bouton de renommage (crayon) */
+.btn-rename {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* Afficher le crayon au survol de la ligne */
+.file-item-row:hover .btn-rename {
+    opacity: 1;
+}
+
+.btn-rename:hover {
+    color: #0d6efd;
+    transform: scale(1.05);
+}
+
+/* Bouton de validation (coche verte) */
+.btn-validate {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px 8px;
+    font-size: 0.9rem;
+    color: #198754;
+}
+
+/* Afficher la coche quand l'input est focus */
+.rename-input:focus + .btn-validate,
+.rename-input:focus ~ .btn-validate {
+    opacity: 1;
+}
+
+.btn-validate:hover {
+    color: #0d6efd;
+    transform: scale(1.05);
+}
+
+/* Cacher le crayon quand l'input est focus */
+.rename-input:focus ~ .btn-rename,
+.rename-input:focus + .btn-rename {
+    opacity: 0 !important;
+}
+
+/* Animation de validation */
+@keyframes validatePulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.btn-validate:active {
+    animation: validatePulse 0.2s ease;
+}
