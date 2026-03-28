@@ -138,45 +138,127 @@ function displayModalTags(filePath, tags) {
     
     container.innerHTML = '';
     
-    if (!tags || tags.length === 0) {
-        container.innerHTML = '<span class="text-muted small">Aucun tag</span>';
-        return;
+    if (tags && tags.length > 0) {
+        tags.forEach(tag => {
+            const tagColor = window.tagColors ? (window.tagColors[tag] || '#6c757d') : '#6c757d';
+            const tagElement = document.createElement('div');
+            tagElement.className = 'tag-item';
+            tagElement.style.background = tagColor;
+            
+            tagElement.innerHTML = `
+                <span>#${escapeHtml(tag)}</span>
+                <button type="button" class="btn-remove-tag-row-modal" data-tag="${escapeHtml(tag)}">✕</button>
+            `;
+            container.appendChild(tagElement);
+        });
     }
     
-    tags.forEach(tag => {
-        const tagColor = window.tagColors ? (window.tagColors[tag] || '#6c757d') : '#6c757d';
-        const tagElement = document.createElement('div');
-        tagElement.className = 'tag-item d-flex align-items-center gap-1';
-        tagElement.style.background = tagColor;
-        tagElement.style.color = 'white';
-        tagElement.style.borderRadius = '4px';
-        tagElement.style.padding = '2px 6px 2px 10px';
-        tagElement.style.fontSize = '0.7rem';
-        tagElement.style.fontWeight = '500';
-        
-        tagElement.innerHTML = `
-            <span>#${escapeHtml(tag)}</span>
-            <button type="button" class="btn-remove-tag-row-modal" data-tag="${escapeHtml(tag)}" 
-                    style="background: none; border: none; color: white; cursor: pointer; font-size: 0.8rem; padding: 0 4px; opacity: 0.7;">
-                ✕
-            </button>
-        `;
-        container.appendChild(tagElement);
-    });
+    // Ajouter le bouton + Ajouter un tag
+    const addButton = document.createElement('button');
+    addButton.type = 'button';
+    addButton.className = 'btn-add-tag';
+    addButton.innerHTML = '+ Ajouter';
+    addButton.onclick = function(e) {
+        e.stopPropagation();
+        showTagSelector();
+    };
+    container.appendChild(addButton);
     
-    // Attacher les événements pour les boutons de suppression dans la modale
+    // Attacher les événements pour les boutons de suppression
     document.querySelectorAll('.btn-remove-tag-row-modal').forEach(btn => {
         btn.removeEventListener('click', handleModalRemoveTag);
         btn.addEventListener('click', handleModalRemoveTag);
     });
 }
 
+// GESTIONNAIRE DE SUPPRESSION DE TAG DANS LA MODALE
 function handleModalRemoveTag(e) {
     e.stopPropagation();
     const tagName = this.getAttribute('data-tag');
     if (window.removeTagFromRow) {
         window.removeTagFromRow(currentFilePath, tagName);
     }
+}
+
+// AFFICHER LE SÉLECTEUR DE TAGS DANS LA MODALE
+function showTagSelector() {
+    const currentItem = currentGallery[currentIndex];
+    const currentTags = currentItem?.tags || [];
+    
+    // Tags disponibles (ceux qui ne sont pas déjà attribués)
+    const availableTags = Object.keys(window.tagColors || {}).filter(tag => !currentTags.includes(tag));
+    
+    const container = document.getElementById('availableTagsList');
+    if (!container) return;
+    
+    if (availableTags.length === 0) {
+        container.innerHTML = '<div class="text-muted text-center">Aucun tag disponible</div>';
+    } else {
+        container.innerHTML = availableTags.map(tag => {
+            const tagColor = window.tagColors ? (window.tagColors[tag] || '#6c757d') : '#6c757d';
+            return `
+                <button type="button" class="btn btn-sm tag-select-btn-modal" 
+                        data-tag="${escapeHtml(tag)}"
+                        style="background: ${tagColor}; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;">
+                    #${escapeHtml(tag)}
+                </button>
+            `;
+        }).join('');
+    }
+    
+    // Attacher les événements aux boutons
+    document.querySelectorAll('.tag-select-btn-modal').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const tag = this.getAttribute('data-tag');
+            addTagToCurrentFile(tag);
+        });
+    });
+    
+    const modal = new bootstrap.Modal(document.getElementById('tagSelectorModal'));
+    modal.show();
+}
+
+// AJOUTER UN TAG AU FICHIER COURANT
+function addTagToCurrentFile(tagName) {
+    if (!currentFilePath) return;
+    
+    const formData = new FormData();
+    formData.append('file_path', currentFilePath);
+    formData.append('add_tag', tagName);
+    formData.append('update_media_tags', '1');
+    
+    fetch('admin.php', {
+        method: 'POST',
+        body: formData,
+        headers: { 'X-Requested-With': 'XMLHttpRequest' }
+    })
+    .then(response => {
+        if (response.ok) {
+            // Mettre à jour les tags dans la galerie
+            const currentItem = currentGallery[currentIndex];
+            if (currentItem) {
+                const updatedTags = [...currentItem.tags, tagName];
+                currentItem.tags = updatedTags;
+                displayModalTags(currentFilePath, updatedTags);
+                
+                // Mettre à jour l'attribut data-tags dans la carte
+                const card = document.querySelector(`.file-item-row[data-path="${currentFilePath}"]`);
+                if (card) {
+                    card.setAttribute('data-tags', updatedTags.join(' ').toLowerCase());
+                    // Mettre à jour l'affichage des tags dans la ligne
+                    const tagsContainer = card.querySelector('.d-flex.flex-wrap.gap-1.mt-1');
+                    if (tagsContainer && window.updateRowTagsDisplay) {
+                        window.updateRowTagsDisplay(card, updatedTags);
+                    }
+                }
+            }
+            
+            // Fermer la modale de sélection
+            const selectorModal = bootstrap.Modal.getInstance(document.getElementById('tagSelectorModal'));
+            if (selectorModal) selectorModal.hide();
+        }
+    })
+    .catch(err => console.error('Erreur ajout tag:', err));
 }
 
 // NAVIGATION
@@ -228,3 +310,6 @@ window.modalCopyAction = modalCopyAction;
 window.updateModalContent = updateModalContent;
 window.displayModalTags = displayModalTags;
 window.initModal = initModal;
+window.showTagSelector = showTagSelector;
+window.addTagToCurrentFile = addTagToCurrentFile;
+window.handleModalRemoveTag = handleModalRemoveTag;

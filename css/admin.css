@@ -1,5 +1,5 @@
 /* ==========================================================================
-   ADMIN.CSS - Styles pour l'interface d'administration
+   ADMIN.CSS - Styles généraux de l'interface d'administration
    ========================================================================== */
 
 /* ==========================================================================
@@ -182,61 +182,8 @@
 }
 
 /* ==========================================================================
-   BOUTONS DE NAVIGATION MODALE
-   ========================================================================== */
-.nav-btn {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background: var(--modal-bg);
-    border-radius: 50%;
-    width: 50px;
-    height: 50px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
-    z-index: 2000;
-    border: none;
-    transition: background 0.2s ease, box-shadow 0.2s ease;
-    cursor: pointer;
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--dark);
-}
-
-.nav-btn:hover {
-    background: var(--light-gray);
-    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
-}
-
-.nav-prev {
-    left: -75px;
-}
-
-.nav-next {
-    right: -75px;
-}
-
-/* ==========================================================================
    RESPONSIVE
    ========================================================================== */
-@media (max-width: 1300px) {
-    .nav-prev {
-        left: 15px;
-    }
-    
-    .nav-next {
-        right: 15px;
-    }
-    
-    .nav-btn {
-        width: 40px;
-        height: 40px;
-        font-size: 1.2rem;
-    }
-}
-
 @media (max-width: 768px) {
     .folder-title {
         flex-direction: column;

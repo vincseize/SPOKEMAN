@@ -12,14 +12,9 @@
             <div class="modal-body text-center">
                 <div id="modalMediaContent" class="mb-3"></div>
                 
-                <div id="modalTagsContainer" class="p-2 bg-light rounded mb-3">
+                <div id="modalTagsContainer" class="mb-2">
                     <div class="d-flex flex-wrap justify-content-center gap-2 align-items-center" id="modalTagsList">
                         <!-- Les tags actuels seront insérés ici par JavaScript -->
-                    </div>
-                    <div class="mt-2 text-center">
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="window.showTagSelector()" style="font-size: 0.7rem;">
-                            + Ajouter un tag
-                        </button>
                     </div>
                 </div>
             </div>

@@ -150,6 +150,7 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
     <link rel="icon" href="<?= $favicon ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="css/admin.css?<?= time() ?>">
+    <link rel="stylesheet" href="css/admin-modal.css?<?= time() ?>">
     <title><?= $appName ?> - Admin</title>
 </head>
 <body class="bg-light">
