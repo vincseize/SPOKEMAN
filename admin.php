@@ -155,18 +155,30 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
 </head>
 <body class="bg-light">
 
-    <nav class="navbar navbar-dark bg-dark sticky-top shadow-sm mb-4">
-        <div class="container-fluid px-5">
-            <a class="navbar-brand fw-bold d-flex align-items-center" href="admin.php">
-                <img src="<?= $favicon ?>" width="24" height="24" class="me-2" style="filter: brightness(0) invert(1);">
-                <?= strtoupper($appName) ?> - Admin
-            </a>
-            <div class="d-flex gap-2">
-                <a href="tags.php" class="btn btn-warning btn-sm fw-bold">🏷️ Tags</a>
-                <a href="index.php" class="btn btn-outline-light btn-sm">Galerie</a>
+<nav class="navbar navbar-dark bg-dark sticky-top shadow-sm mb-4">
+    <div class="container-fluid px-5">
+        <a class="navbar-brand fw-bold d-flex align-items-center" href="admin.php">
+            <img src="<?= $favicon ?>" width="24" height="24" class="me-2" style="filter: brightness(0) invert(1);">
+            <?= strtoupper($appName) ?> - Admin
+        </a>
+        <div class="d-flex gap-3 align-items-center">
+            <div class="position-relative">
+                <input type="text" id="searchInput" class="form-control form-control-sm" 
+                       placeholder="Rechercher nom ou #tag..." 
+                       style="width: 250px; padding-left: 30px; padding-right: 30px;"
+                       onkeyup="filterFiles()">
+                <span class="position-absolute start-0 top-50 translate-middle-y ms-2 text-muted" style="font-size: 0.8rem;">🔍</span>
+                <button type="button" id="clearSearchBtn" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-1 p-0" 
+                        style="display: none; background: none; border: none; color: #aaa; font-size: 0.8rem; cursor: pointer;"
+                        onclick="clearSearch()">
+                    ✕
+                </button>
             </div>
+            <a href="tags.php" class="btn btn-warning btn-sm fw-bold">🏷️ Tags</a>
+            <a href="index.php" class="btn btn-outline-light btn-sm">Galerie</a>
         </div>
-    </nav>
+    </div>
+</nav>
 
     <div class="container-fluid px-5 pb-5">
         <div class="row g-4">
@@ -199,6 +211,21 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
 
             <!-- Zone principale -->
             <div class="col-lg-9">
+
+<?php if (!empty($tagNamesList)): ?>
+    <div class="tags-cloud mb-3 p-2 bg-white rounded border d-flex flex-wrap gap-2 align-items-center">
+        <span class="text-muted small fw-bold">🏷️</span>
+        <?php foreach ($tagNamesList as $tagName): 
+            $tagColor = $tagColors[$tagName] ?? '#6c757d';
+        ?>
+            <span class="badge" style="background: <?= $tagColor ?>; color: white; font-size: 0.7rem; padding: 4px 10px; border-radius: 20px;">
+                #<?= htmlspecialchars($tagName) ?>
+            </span>
+        <?php endforeach; ?>
+    </div>
+    <?php endif; ?>
+
+
                 <?php if (empty($folders)): ?>
                     <div class="alert alert-info">Aucun dossier. Créez-en un pour commencer.</div>
                 <?php endif; ?>
@@ -269,14 +296,14 @@ $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTT
                                         </div>
                                         
                                         <div class="d-flex align-items-center gap-1">
-<button type="button" class="btn-copy-minimal btn btn-sm" 
-        data-url="<?= htmlspecialchars($fullUrl) ?>" 
-        title="Copier le lien">
-    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-        <rect x="8" y="8" width="16" height="16" rx="1" ry="1"></rect>
-        <rect x="4" y="4" width="16" height="16" rx="1" ry="1"></rect>
-    </svg>
-</button>
+                                            <button type="button" class="btn-copy-minimal btn btn-sm" 
+                                                    data-url="<?= htmlspecialchars($fullUrl) ?>" 
+                                                    title="Copier le lien">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                                    <rect x="8" y="8" width="16" height="16" rx="1" ry="1"></rect>
+                                                    <rect x="4" y="4" width="16" height="16" rx="1" ry="1"></rect>
+                                                </svg>
+                                            </button>
                                             <form method="post" class="delete-file-form m-0" onclick="event.stopPropagation();">
                                                 <input type="hidden" name="file_path" value="<?= htmlspecialchars($path) ?>">
                                                 <button type="submit" name="delete_file" class="btn btn-sm text-danger border-0" title="Supprimer">✕</button>

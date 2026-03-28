@@ -164,20 +164,96 @@ function submitRename(form) {
 // FILTRAGE
 function filterFiles() {
     const input = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
     if (!input) return;
-    const searchTerm = input.value.toLowerCase();
+    
+    let searchTerm = input.value.toLowerCase().trim();
+    
+    if (clearBtn) {
+        clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
+    }
+    
+    const isTagSearch = searchTerm.startsWith('#');
+    let searchValue = searchTerm;
+    if (isTagSearch) {
+        searchValue = searchTerm.substring(1);
+    }
+    
+    console.log("=== FILTRAGE ===");
+    console.log("Recherche:", searchTerm);
+    console.log("Recherche tag:", isTagSearch);
+    console.log("Valeur recherchée:", searchValue);
+    
+    let hasVisibleRows = false;
     
     document.querySelectorAll('.file-item-row').forEach(row => {
         const fileName = row.getAttribute('data-filename')?.toLowerCase() || "";
-        const fileTags = row.getAttribute('data-tags')?.toLowerCase() || "";
-        const isMatch = searchTerm === "" || fileName.includes(searchTerm) || fileTags.includes(searchTerm);
+        const fileTagsAttr = row.getAttribute('data-tags') || "";
+        
+        let isMatch = false;
+        
+        if (searchValue === "") {
+            isMatch = true;
+        } else if (isTagSearch) {
+            // Recherche par tag - recherche PARTIELLE (contient)
+            const tagsArray = fileTagsAttr.trim() === "" ? [] : fileTagsAttr.split(/\s+/);
+            
+            console.log(`\n--- Fichier: ${fileName} ---`);
+            console.log(`Tags bruts: "${fileTagsAttr}"`);
+            console.log(`Tags array:`, tagsArray);
+            
+            tagsArray.forEach(tag => {
+                const contains = tag.includes(searchValue);
+                console.log(`  Tag "${tag}" contient "${searchValue}"? ${contains}`);
+                if (contains) console.log(`    -> MATCH!`);
+            });
+            
+            isMatch = tagsArray.some(tag => tag.includes(searchValue));
+            console.log(`Résultat pour ${fileName}: ${isMatch}`);
+            
+        } else {
+            // Recherche par nom de fichier
+            isMatch = fileName.includes(searchValue);
+        }
+        
         row.style.display = isMatch ? "" : "none";
+        if (isMatch) hasVisibleRows = true;
     });
     
+    console.log("\n=== RÉSULTAT ===");
+    console.log("Fichiers visibles:", hasVisibleRows);
+    
     document.querySelectorAll('.folder-block').forEach(block => {
-        const visibleRows = block.querySelectorAll('.file-item-row[style=""]');
+        const visibleRows = block.querySelectorAll('.file-item-row:not([style*="display: none"])');
         block.style.display = visibleRows.length > 0 ? "" : "none";
     });
+    
+    const noResultsDiv = document.getElementById('noSearchResults');
+    if (!hasVisibleRows && searchValue !== "") {
+        if (!noResultsDiv) {
+            const mainCol = document.querySelector('.col-lg-9');
+            const div = document.createElement('div');
+            div.id = 'noSearchResults';
+            div.className = 'alert alert-info text-center mt-3';
+            div.innerHTML = `Aucun résultat pour "${searchTerm}"`;
+            mainCol?.appendChild(div);
+        } else {
+            noResultsDiv.style.display = 'block';
+            noResultsDiv.innerHTML = `Aucun résultat pour "${searchTerm}"`;
+        }
+    } else if (noResultsDiv) {
+        noResultsDiv.style.display = 'none';
+    }
+}
+
+// EFFACER LA RECHERCHE
+function clearSearch() {
+    const input = document.getElementById('searchInput');
+    if (input) {
+        input.value = '';
+        filterFiles();
+        input.focus();
+    }
 }
 
 // ESCAPE HTML
@@ -297,6 +373,16 @@ document.querySelectorAll('.delete-file-form').forEach(form => {
             if (modalContent) modalContent.innerHTML = '';
         });
     }
+
+    // Clear search button
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearSearch();
+        });
+    }
+
 });
 
 // Exposer les fonctions
