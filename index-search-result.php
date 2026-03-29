@@ -102,18 +102,25 @@ foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
                     <span class="badge bg-secondary mt-2">Nom: "<?= htmlspecialchars($searchName) ?>"</span>
                 <?php endif; ?>
             </div>
-<button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">
-    ✕ Effacer tout
-</button>
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">
+                ✕ Effacer tout
+            </button>
         </div>
         
         <?php foreach ($resultsByFolder as $folderName => $folderData): ?>
+            <?php 
+            // Construire le lien ZIP avec les tags actuels
+            $zipTagsQuery = !empty($searchTags) ? '&tags=' . implode(',', $searchTags) : '';
+            ?>
             <div class="folder-block mb-4 border rounded">
                 <div class="folder-title bg-light p-2 px-3 border-bottom">
                     <div class="d-flex align-items-center gap-2">
                         <span class="text-warning">📁</span>
                         <span class="fw-bold"><?= htmlspecialchars($folderName) ?></span>
                         <span class="badge bg-white text-muted border rounded-pill"><?= count($folderData['files']) ?></span>
+                        <a href="zip.php?folder=<?= urlencode($folderName) . $zipTagsQuery ?>" class="btn btn-sm btn-outline-secondary ms-auto" title="Télécharger ZIP ce dossier avec ses tags" style="font-size: 0.7rem; padding: 2px 8px;">
+                            📥 ZIP
+                        </a>
                     </div>
                 </div>
                 <div class="file-list" style="padding: 0;">
