@@ -34,7 +34,7 @@ include_once 'admin-header.php';
                     ✕
                 </button>
             </div>
-            <a href="tags.php" class="btn btn-warning btn-sm fw-bold">🏷️ Tags</a>
+            <a href="tags.php" class="btn btn-primary btn-sm fw-bold">🏷️ Tags</a>
             <a href="index.php" class="btn btn-outline-light btn-sm">Galerie</a>
         </div>
     </div>
