@@ -10,16 +10,43 @@ if (!isset($rootUrl)) {
     $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']), '/\\') . "/";
 }
 
-// Récupérer les tags sélectionnés
+// Récupérer les paramètres depuis l'URL
 $searchTags = isset($selectedTagsFromJS) ? $selectedTagsFromJS : [];
 $searchName = isset($searchTerm) ? $searchTerm : '';
+$selectedFolders = isset($selectedFolders) ? $selectedFolders : [];
+
+// DÉTERMINER SI ON EST DANS LA VUE DOSSIER (paramètre folder)
+$currentFolderParam = isset($_GET['folder']) ? basename($_GET['folder']) : null;
+$isFolderView = $currentFolderParam !== null && is_dir($baseDir . $currentFolderParam);
 
 // Compter le nombre de résultats
 $totalResults = 0;
 $resultsByFolder = [];
 
-// Parcourir tous les dossiers pour collecter les résultats
-foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
+// Déterminer la liste des dossiers à parcourir
+$foldersToScan = [];
+
+if ($isFolderView) {
+    // Vue dossier : on ne scanne que le dossier courant
+    $folderPath = $baseDir . $currentFolderParam;
+    if (is_dir($folderPath)) {
+        $foldersToScan[] = $folderPath;
+    }
+} elseif (!empty($selectedFolders)) {
+    // Vue grille avec dossiers sélectionnés : on ne scanne que ceux-ci
+    foreach ($selectedFolders as $folderName) {
+        $folderPath = $baseDir . $folderName;
+        if (is_dir($folderPath)) {
+            $foldersToScan[] = $folderPath;
+        }
+    }
+} else {
+    // Vue grille sans sélection : on scanne tous les dossiers
+    $foldersToScan = glob($baseDir . '*', GLOB_ONLYDIR);
+}
+
+// Parcourir les dossiers pour collecter les résultats
+foreach ($foldersToScan as $folder) {
     $fName = basename($folder);
     $files = @scandir($folder);
     if ($files === false) $files = [];
@@ -77,6 +104,11 @@ foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
         <?php elseif (!empty($searchName)): ?>
             <p class="small text-muted mt-2">Aucun fichier ne contient "<?= htmlspecialchars($searchName) ?>"</p>
         <?php endif; ?>
+        <?php if ($isFolderView): ?>
+            <p class="small text-muted mt-2">Dossier : <?= htmlspecialchars($currentFolderParam) ?></p>
+        <?php elseif (!empty($selectedFolders)): ?>
+            <p class="small text-muted mt-2">Dossiers sélectionnés : <?= implode(', ', $selectedFolders) ?></p>
+        <?php endif; ?>
     </div>
 <?php else: ?>
     <div class="search-results">
@@ -100,6 +132,11 @@ foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
                 <?php endif; ?>
                 <?php if (!empty($searchName)): ?>
                     <span class="badge bg-secondary mt-2">Nom: "<?= htmlspecialchars($searchName) ?>"</span>
+                <?php endif; ?>
+                <?php if ($isFolderView): ?>
+                    <span class="badge bg-secondary mt-2">Dossier: <?= htmlspecialchars($currentFolderParam) ?></span>
+                <?php elseif (!empty($selectedFolders)): ?>
+                    <span class="badge bg-secondary mt-2">Dossiers: <?= implode(', ', $selectedFolders) ?></span>
                 <?php endif; ?>
             </div>
             <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearAllFilters()">

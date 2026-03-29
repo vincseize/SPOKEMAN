@@ -20,10 +20,30 @@ function removeSelectedTag(tag) {
     console.log("Tag retiré du filtre:", tag, "Tags actifs:", selectedTags);
 }
 
+// RÉCUPÉRER LES DOSSIERS COCHÉS
+function getCheckedFolders() {
+    const checkedFolders = [];
+    document.querySelectorAll('.folder-select-checkbox-gal:checked').forEach(cb => {
+        const folderPath = cb.getAttribute('data-folder');
+        if (folderPath) {
+            checkedFolders.push(basename(folderPath));
+        }
+    });
+    return checkedFolders;
+}
+
+// EXTRAIRE LE NOM DU DOSSIER D'UN CHEMIN
+function basename(path) {
+    return path.split('/').pop();
+}
+
 // APPLIQUER LES FILTRES - Recharger la page avec les paramètres
 function applyFilters() {
     const input = document.getElementById('searchInput');
     const searchTerm = input ? input.value.trim() : '';
+    
+    // Récupérer les dossiers cochés
+    const checkedFolders = getCheckedFolders();
     
     // Construire l'URL avec les paramètres
     let url = 'index.php?';
@@ -35,6 +55,12 @@ function applyFilters() {
     
     if (selectedTags.length > 0) {
         params.push('tags=' + encodeURIComponent(selectedTags.join(',')));
+    }
+    
+    // Ajouter les dossiers cochés
+    if (checkedFolders.length > 0 && checkedFolders.length !== document.querySelectorAll('.folder-select-checkbox-gal').length) {
+        // Si tous ne sont pas cochés, on filtre par dossiers
+        params.push('folders=' + encodeURIComponent(checkedFolders.join(',')));
     }
     
     if (params.length > 0) {
@@ -84,15 +110,14 @@ function clearAllFilters() {
 
 // SUPPRIMER UN TAG DEPUIS LES RÉSULTATS
 function removeTagFromResults(tag) {
-    // Récupérer les tags actuels depuis l'URL
+    // Récupérer les paramètres actuels
     const urlParams = new URLSearchParams(window.location.search);
     let currentTags = urlParams.get('tags') ? urlParams.get('tags').split(',') : [];
+    const searchTerm = urlParams.get('search') || '';
+    const folders = urlParams.get('folders') || '';
     
     // Filtrer pour enlever le tag
     currentTags = currentTags.filter(t => t !== tag);
-    
-    // Récupérer le terme de recherche actuel
-    const searchTerm = urlParams.get('search') || '';
     
     // Construire la nouvelle URL
     let newUrl = 'index.php?';
@@ -104,6 +129,10 @@ function removeTagFromResults(tag) {
     
     if (currentTags.length > 0) {
         params.push('tags=' + encodeURIComponent(currentTags.join(',')));
+    }
+    
+    if (folders !== '') {
+        params.push('folders=' + encodeURIComponent(folders));
     }
     
     if (params.length > 0) {

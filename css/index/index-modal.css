@@ -1,117 +1,6 @@
 /* ==========================================================================
-   CONFIG & VARIABLES
+   INDEX-MODAL.CSS - Styles de la modale pour la galerie
    ========================================================================== */
-:root {
-    --backdrop-bg: 0, 0, 0;
-    --backdrop-opacity: 0.85;
-    --modal-bg: #ffffff;
-    --modal-radius: 12px;
-    --modal-shadow: 0 25px 70px rgba(0,0,0,0.5);
-    --primary: #0d6efd;
-    --primary-dark: #0b5ed7;
-    --dark: #333;
-    --muted: #6c757d;
-    --light-gray: #f8f9fa;
-    --border-color: #dee2e6;
-    --nav-btn-size: 50px;
-    --folder-color: #ffca28;
-    --tag-bg: #e7f1ff;
-    --tag-color: #0d6efd;
-    --tag-hover-bg: #0d6efd;
-    --tag-hover-color: #ffffff;
-}
-
-/* BASE */
-html, body { 
-    min-height: 100vh; 
-    display: flex; 
-    flex-direction: column; 
-    background-color: var(--light-gray);
-    color: var(--dark);
-}
-
-.main-content { 
-    flex: 1; 
-}
-
-/* ==========================================================================
-   CARTES MÉDIAS (GRILLE)
-   ========================================================================== */
-.media-card { 
-    transition: transform 0.2s ease, box-shadow 0.2s; 
-    border: 1px solid var(--border-color) !important;
-    border-radius: var(--modal-radius);
-    overflow: hidden;
-    background: #fff;
-    cursor: pointer;
-    position: relative;
-}
-
-.media-card:hover { 
-    transform: translateY(-5px); 
-    box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important; 
-}
-
-.media-card img, 
-.media-card video {
-    transition: transform 0.3s ease;
-}
-
-.media-card:hover img,
-.media-card:hover video {
-    transform: scale(1.05);
-}
-
-.folder-icon { 
-    font-size: 3.5rem; 
-    color: var(--folder-color); 
-    transition: transform 0.2s ease;
-}
-
-.media-card:hover .folder-icon {
-    transform: scale(1.1);
-}
-
-/* TAGS SUR LES CARTES */
-.tags-preview {
-    min-height: 18px;
-    max-height: 60px;
-    overflow-y: auto;
-    padding: 4px 0;
-}
-
-.tags-preview .badge {
-    font-size: 0.6rem;
-    font-weight: 500;
-    padding: 3px 8px;
-    background-color: var(--tag-bg);
-    color: var(--tag-color);
-    border: 1px solid rgba(13, 110, 253, 0.2);
-    transition: all 0.2s ease;
-}
-
-/* BOUTON ZIP */
-.download-zip {
-    position: absolute; 
-    top: 10px; 
-    right: 10px; 
-    z-index: 10; 
-    opacity: 0;
-    transition: all 0.2s ease; 
-    background: rgba(255, 255, 255, 0.95);
-    border: 1px solid var(--border-color);
-    border-radius: 6px; 
-    padding: 4px 10px; 
-    font-size: 0.7rem; 
-    color: var(--primary);
-    font-weight: bold; 
-    text-decoration: none;
-    backdrop-filter: blur(2px);
-}
-
-.media-card:hover .download-zip { 
-    opacity: 1; 
-}
 
 /* ==========================================================================
    MODALE (STRUCTURE)
@@ -134,7 +23,7 @@ html, body {
 }
 
 .modal-body {
-    padding: 1rem; /* Réduit pour plus de focus sur le média */
+    padding: 1rem;
 }
 
 .modal-footer {
@@ -162,7 +51,6 @@ html, body {
     max-height: 70vh;
     border-radius: 4px;
     box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-    /* Animation Opacity SEULEMENT (Pas de scale/zoom) */
     animation: modalFadeIn 0.2s ease-out;
 }
 
@@ -175,11 +63,11 @@ html, body {
    TAGS MODALE - STYLE ÉPURÉ (MINIMALISTE)
    ========================================================================== */
 #modalTagsContainer {
-    background: transparent; /* Pas de fond */
-    border: none;            /* Pas de bordure */
-    box-shadow: none;        /* Pas d'ombre */
-    padding: 0 !important;   /* Pas de padding interne */
-    margin: 0.75rem 0 0 0;   /* Marge minimale en haut */
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0 !important;
+    margin: 0.75rem 0 0 0;
 }
 
 #modalTagsContainer:not(.d-none) {
@@ -218,18 +106,17 @@ html, body {
     padding: 4px 10px;
     background-color: var(--tag-bg);
     color: var(--tag-color);
-    border: none;            /* Suppression bordure */
-    border-radius: 4px;      /* Coins moins arrondis (style plus flat) */
+    border: none;
+    border-radius: 4px;
     transition: background 0.2s;
     cursor: default;
     user-select: none;
-    /* Pas d'animation de zoom ici non plus */
 }
 
 #modalTagDisplay .badge:hover {
     background-color: var(--tag-hover-bg);
     color: var(--tag-hover-color);
-    transform: none;         /* Pas de mouvement */
+    transform: none;
 }
 
 /* ==========================================================================
@@ -253,9 +140,9 @@ html, body {
     cursor: pointer;
     font-size: 1.5rem;
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    z-index: 2000 !important; /* Force le bouton au-dessus du backdrop */
+    z-index: 2000 !important;
     position: absolute;
-    pointer-events: auto; /* Assure que le clic est capturé */
+    pointer-events: auto;
 }
 
 .nav-btn:hover {
@@ -265,11 +152,16 @@ html, body {
 }
 
 .nav-btn:active {
-    transform: translateY(-50%); /* Pas de scale au clic */
+    transform: translateY(-50%);
 }
 
-.nav-prev { left: -75px; }
-.nav-next { right: -75px; }
+.nav-prev { 
+    left: -75px; 
+}
+
+.nav-next { 
+    right: -75px; 
+}
 
 @media (max-width: 1200px) {
     .nav-prev { left: 10px; }
@@ -277,7 +169,7 @@ html, body {
 }
 
 /* ==========================================================================
-   DIVERS & UTILS
+   SPÉCIFICATIONS MÉDIA MODALE
    ========================================================================== */
 #modalMediaSpecs {
     font-size: 0.7rem;
@@ -285,13 +177,4 @@ html, body {
     background: rgba(0,0,0,0.04);
     padding: 2px 8px;
     border-radius: 4px;
-}
-
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-track { background: var(--light-gray); }
-::-webkit-scrollbar-thumb { background: #cbd5e0; border-radius: 10px; }
-::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
-
-@media (prefers-reduced-motion: reduce) {
-    * { animation: none !important; transition: none !important; }
 }

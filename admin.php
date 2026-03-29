@@ -9,8 +9,8 @@ include_once 'admin-header.php';
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="<?= $favicon ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/admin.css?<?= time() ?>">
-    <link rel="stylesheet" href="css/admin-modal.css?<?= time() ?>">
+    <link rel="stylesheet" href="css/admin/admin.css?<?= time() ?>">
+    <link rel="stylesheet" href="css/admin/admin-modal.css?<?= time() ?>">
     <title><?= $appName ?> - Admin</title>
 </head>
 <body class="bg-light">
@@ -238,14 +238,14 @@ include_once 'admin-header.php';
 </script>
 
 <!-- Charger les modules JS dans l'ordre -->
-<script src="js/admin-core.js?<?= time() ?>"></script>
-<script src="js/admin-copy.js?<?= time() ?>"></script>
-<script src="js/admin-delete.js?<?= time() ?>"></script>
-<script src="js/admin-rename.js?<?= time() ?>"></script>
-<script src="js/admin-tags.js?<?= time() ?>"></script>
-<script src="js/admin-filters.js?<?= time() ?>"></script>
+<script src="js/admin/admin-core.js?<?= time() ?>"></script>
+<script src="js/admin/admin-copy.js?<?= time() ?>"></script>
+<script src="js/admin/admin-delete.js?<?= time() ?>"></script>
+<script src="js/admin/admin-rename.js?<?= time() ?>"></script>
+<script src="js/admin/admin-tags.js?<?= time() ?>"></script>
+<script src="js/admin/admin-filters.js?<?= time() ?>"></script>
 <script src="js/admin-modal.js?<?= time() ?>"></script>
-<script src="js/admin.js?<?= time() ?>"></script>
+<script src="js/admin/admin.js?<?= time() ?>"></script>
 
 </body>
 </html>

@@ -5,9 +5,14 @@ include_once 'index-header.php';
 // Définir $rootUrl (comme dans admin.php)
 $rootUrl = (isset($_SERVER['HTTPS']) ? "https" : "http") . "://" . $_SERVER['HTTP_HOST'] . rtrim(dirname($_SERVER['PHP_SELF']), '/\\') . "/";
 
-// Récupérer les tags depuis l'URL
+// Récupérer les paramètres depuis l'URL
 $tagsParam = isset($_GET['tags']) ? explode(',', $_GET['tags']) : [];
 $searchTerm = isset($_GET['search']) ? $_GET['search'] : null;
+$foldersParam = isset($_GET['folders']) ? explode(',', $_GET['folders']) : [];
+
+// Si on est dans un dossier spécifique (vue dossier)
+$isFolderView = isset($_GET['folder']) && is_dir($baseDir . $_GET['folder']);
+
 ?>
 
 <!DOCTYPE html>
@@ -18,7 +23,8 @@ $searchTerm = isset($_GET['search']) ? $_GET['search'] : null;
     <title><?= htmlspecialchars($appName) ?></title>
     <link rel="icon" href="<?= $favicon ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="css/index.css?<?= time() ?>">
+    <link rel="stylesheet" href="css/index/index.css?<?= time() ?>">
+    <link rel="stylesheet" href="css/index/index-modal.css?<?= time() ?>">
 </head>
 <body class="bg-light">
 
@@ -63,10 +69,11 @@ $searchTerm = isset($_GET['search']) ? $_GET['search'] : null;
     </div>
     <?php endif; ?>
 
-    <?php if (!empty($tagsParam) || !empty($searchTerm)): ?>
+    <?php if (!empty($tagsParam) || !empty($searchTerm) || !empty($foldersParam)): ?>
         <!-- Affichage des résultats de recherche/filtrage -->
         <?php 
         $selectedTagsFromJS = $tagsParam;
+        $selectedFolders = $foldersParam;
         include 'index-search-result.php'; 
         ?>
     <?php elseif ($currentFolder && is_dir($baseDir . $currentFolder)): ?>
@@ -86,8 +93,10 @@ $searchTerm = isset($_GET['search']) ? $_GET['search'] : null;
 <script>
     window.tagColors = <?= json_encode($tagColors) ?>;
     window.selectedTagsFromUrl = <?= json_encode($tagsParam) ?>;
+    window.selectedFolders = <?= json_encode($foldersParam) ?>;
     console.log("Tag colors chargées:", window.tagColors);
     console.log("Tags depuis l'URL:", window.selectedTagsFromUrl);
+    console.log("Dossiers sélectionnés:", window.selectedFolders);
 </script>
 
 <script src="js/index/index-core.js?<?= time() ?>"></script>
