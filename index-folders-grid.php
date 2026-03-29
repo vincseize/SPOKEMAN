@@ -17,9 +17,19 @@
 </div>
 <div class="row row-cols-2 row-cols-md-4 row-cols-lg-6 g-4">
     <?php
-    // Récupérer les tags de l'URL pour le lien ZIP
-    $currentTagsParam = isset($_GET['tags']) ? $_GET['tags'] : '';
-    $tagsQuery = !empty($currentTagsParam) ? '&tags=' . urlencode($currentTagsParam) : '';
+    // Récupérer les filtres depuis l'URL
+    $currentSearch = isset($_GET['search']) ? $_GET['search'] : '';
+    $currentTags = isset($_GET['tags']) ? $_GET['tags'] : '';
+    
+    // Construire la query string pour le ZIP
+    $zipParams = [];
+    if (!empty($currentSearch)) {
+        $zipParams[] = 'search=' . urlencode($currentSearch);
+    }
+    if (!empty($currentTags)) {
+        $zipParams[] = 'tags=' . urlencode($currentTags);
+    }
+    $zipQuery = !empty($zipParams) ? '&' . implode('&', $zipParams) : '';
     
     foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
         $name = basename($folder);
@@ -29,7 +39,7 @@
                     <div class="position-absolute top-0 start-0 p-2" style="z-index: 5;">
                         <input type="checkbox" class="folder-select-checkbox-gal" data-folder="' . htmlspecialchars($folder) . '" checked style="width: 18px; height: 18px; cursor: pointer;">
                     </div>
-                    <a href="zip.php?folder='.urlencode($name). $tagsQuery .'" class="download-zip" title="Télécharger ZIP">📥 ZIP</a>
+                    <a href="zip.php?folder='.urlencode($name) . $zipQuery .'" class="download-zip" title="Télécharger ZIP">📥 ZIP</a>
                     <a href="index.php?folder='.urlencode($name).'" class="text-decoration-none text-dark p-3">
                         <div class="folder-icon">📁</div>
                         <div class="card-body p-1">

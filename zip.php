@@ -24,53 +24,102 @@ if (file_exists($mediaTagsFile)) {
 if (isset($_GET['folder'])) {
     $folderName = basename($_GET['folder']); 
     $folderPath = $baseDir . $folderName;
-
+    
+    // Récupérer les paramètres de filtrage
+    $searchTerm = isset($_GET['search']) ? strtolower($_GET['search']) : '';
+    $selectedTags = isset($_GET['tags']) ? explode(',', $_GET['tags']) : [];
+    
+    // Filtrer les tags vides
+    $selectedTags = array_filter($selectedTags, function($tag) { return !empty($tag); });
+    
     if (is_dir($folderPath)) {
-        // Récupérer les tags depuis le paramètre GET
-        $selectedTags = isset($_GET['tags']) ? explode(',', $_GET['tags']) : [];
-        
         $zip = new ZipArchive();
         $zipName = $folderName . ".zip";
         $zipFile = tempnam(sys_get_temp_dir(), 'zip');
 
         if ($zip->open($zipFile, ZipArchive::CREATE | ZipArchive::OVERWRITE) === TRUE) {
-            // Ajouter tous les fichiers du dossier
-            $files = new RecursiveIteratorIterator(
-                new RecursiveDirectoryIterator($folderPath, RecursiveDirectoryIterator::SKIP_DOTS),
-                RecursiveIteratorIterator::LEAVES_ONLY
-            );
-
-            foreach ($files as $file) {
-                if (!$file->isDir()) {
-                    $filePath = $file->getRealPath();
-                    $relativePath = substr($filePath, strlen(realpath($folderPath)) + 1);
-                    $zip->addFile($filePath, $relativePath);
+            
+            // Récupérer tous les fichiers du dossier
+            $allFiles = array_diff(scandir($folderPath), array('.', '..'));
+            $filesToZip = [];
+            
+            // Filtrer les fichiers selon les critères
+            foreach ($allFiles as $file) {
+                $filePath = $folderPath . '/' . $file;
+                $normalizedPath = str_replace('\\', '/', $filePath);
+                $fileTags = isset($mediaTags[$normalizedPath]) ? $mediaTags[$normalizedPath] : [];
+                if (!is_array($fileTags)) $fileTags = [];
+                
+                $isMatch = true;
+                
+                // Filtre par tags (tous les tags sélectionnés doivent être présents)
+                if (!empty($selectedTags)) {
+                    $isMatch = empty(array_diff($selectedTags, $fileTags));
                 }
+                
+                // Filtre par nom de fichier
+                if ($isMatch && !empty($searchTerm)) {
+                    $isMatch = stripos($file, $searchTerm) !== false;
+                }
+                
+                if ($isMatch) {
+                    $filesToZip[] = [
+                        'path' => $filePath,
+                        'name' => $file,
+                        'tags' => $fileTags
+                    ];
+                }
+            }
+            
+            // Ajouter les fichiers filtrés au ZIP
+            foreach ($filesToZip as $file) {
+                $zip->addFile($file['path'], $file['name']);
             }
             
             // ===== CRÉATION DU FICHIER TAGS.TXT =====
             $tagsContent = "Tags pour le dossier : " . $folderName . "\n";
             $tagsContent .= "================================\n\n";
             
-            if (!empty($selectedTags)) {
-                // Cas 1: Tags sélectionnés par l'utilisateur (filtrage actif)
-                $tagsContent .= "Tags utilisés pour le filtrage :\n";
-                foreach ($selectedTags as $tag) {
-                    $tagsContent .= "- #" . $tag . "\n";
+            // Informations sur le filtrage
+            if (!empty($selectedTags) || !empty($searchTerm)) {
+                $tagsContent .= "Filtres appliqués :\n";
+                if (!empty($searchTerm)) {
+                    $tagsContent .= "- Recherche par nom : \"" . $searchTerm . "\"\n";
                 }
-                $tagsContent .= "\nTotal : " . count($selectedTags) . " tag(s) de filtrage\n";
+                if (!empty($selectedTags)) {
+                    $tagsContent .= "- Tags sélectionnés :\n";
+                    foreach ($selectedTags as $tag) {
+                        $tagsContent .= "  * #" . $tag . "\n";
+                    }
+                }
+                $tagsContent .= "\n";
+            }
+            
+            $tagsContent .= "Fichiers inclus dans ce ZIP : " . count($filesToZip) . " fichier(s)\n\n";
+            
+            if (!empty($filesToZip)) {
+                // Liste des fichiers avec leurs tags
+                $tagsContent .= "--- Détail des fichiers ---\n";
+                foreach ($filesToZip as $file) {
+                    $tagsContent .= "\n" . $file['name'] . " :\n";
+                    if (!empty($file['tags'])) {
+                        foreach ($file['tags'] as $tag) {
+                            $tagsContent .= "  - #" . $tag . "\n";
+                        }
+                    } else {
+                        $tagsContent .= "  - Aucun tag\n";
+                    }
+                }
             } else {
-                // Cas 2: Aucun tag sélectionné → récupérer tous les tags présents dans le dossier
-                $tagsContent .= "Tous les tags présents dans ce dossier :\n";
-                
-                // Parcourir tous les fichiers du dossier pour collecter les tags uniques
+                $tagsContent .= "Aucun fichier ne correspond aux critères.\n";
+            }
+            
+            // Ajouter tous les tags distincts du dossier (optionnel)
+            if (empty($selectedTags)) {
                 $allTagsInFolder = [];
-                $filesList = array_diff(scandir($folderPath), array('.', '..'));
-                
-                foreach ($filesList as $file) {
+                foreach ($allFiles as $file) {
                     $filePath = $folderPath . '/' . $file;
                     $normalizedPath = str_replace('\\', '/', $filePath);
-                    
                     if (isset($mediaTags[$normalizedPath])) {
                         $fileTags = $mediaTags[$normalizedPath];
                         if (is_array($fileTags)) {
@@ -83,31 +132,12 @@ if (isset($_GET['folder'])) {
                     }
                 }
                 
-                // Trier les tags alphabétiquement
-                sort($allTagsInFolder);
-                
                 if (!empty($allTagsInFolder)) {
+                    sort($allTagsInFolder);
+                    $tagsContent .= "\n--- Tous les tags présents dans le dossier ---\n";
                     foreach ($allTagsInFolder as $tag) {
                         $tagsContent .= "- #" . $tag . "\n";
                     }
-                    $tagsContent .= "\nTotal : " . count($allTagsInFolder) . " tag(s) distinct(s)\n";
-                    
-                    // Ajouter un comptage par fichier
-                    $tagsContent .= "\n--- Détail par fichier ---\n";
-                    foreach ($filesList as $file) {
-                        $filePath = $folderPath . '/' . $file;
-                        $normalizedPath = str_replace('\\', '/', $filePath);
-                        $fileTags = isset($mediaTags[$normalizedPath]) ? $mediaTags[$normalizedPath] : [];
-                        
-                        if (!empty($fileTags)) {
-                            $tagsContent .= "\n" . $file . " :\n";
-                            foreach ($fileTags as $tag) {
-                                $tagsContent .= "  - #" . $tag . "\n";
-                            }
-                        }
-                    }
-                } else {
-                    $tagsContent .= "Aucun tag trouvé dans ce dossier.\n";
                 }
             }
             

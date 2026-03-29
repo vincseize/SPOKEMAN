@@ -109,8 +109,15 @@ foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
         
         <?php foreach ($resultsByFolder as $folderName => $folderData): ?>
             <?php 
-            // Construire le lien ZIP avec les tags actuels
-            $zipTagsQuery = !empty($searchTags) ? '&tags=' . implode(',', $searchTags) : '';
+            // Construire la query string pour le ZIP avec TOUS les filtres actuels
+            $zipParams = [];
+            if (!empty($searchName)) {
+                $zipParams[] = 'search=' . urlencode($searchName);
+            }
+            if (!empty($searchTags)) {
+                $zipParams[] = 'tags=' . implode(',', $searchTags);
+            }
+            $zipQuery = !empty($zipParams) ? '&' . implode('&', $zipParams) : '';
             ?>
             <div class="folder-block mb-4 border rounded">
                 <div class="folder-title bg-light p-2 px-3 border-bottom">
@@ -118,7 +125,7 @@ foreach (glob($baseDir . '*', GLOB_ONLYDIR) as $folder) {
                         <span class="text-warning">📁</span>
                         <span class="fw-bold"><?= htmlspecialchars($folderName) ?></span>
                         <span class="badge bg-white text-muted border rounded-pill"><?= count($folderData['files']) ?></span>
-                        <a href="zip.php?folder=<?= urlencode($folderName) . $zipTagsQuery ?>" class="btn btn-sm btn-outline-secondary ms-auto" title="Télécharger ZIP ce dossier avec ses tags" style="font-size: 0.7rem; padding: 2px 8px;">
+                        <a href="zip.php?folder=<?= urlencode($folderName) . $zipQuery ?>" class="btn btn-sm btn-outline-secondary ms-auto" title="Télécharger ZIP avec les filtres actuels" style="font-size: 0.7rem; padding: 2px 8px;">
                             📥 ZIP
                         </a>
                     </div>
