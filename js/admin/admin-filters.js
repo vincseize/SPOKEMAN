@@ -1,33 +1,44 @@
-console.log("admin-filters.js chargé");
+/**
+ * js/admin/admin-filters.js
+ * Debug Version
+ */
+console.log("🚀 admin-filters.js : Chargement du script...");
 
 let selectedTags = [];
 
-// --- NOUVEAU : SAUVEGARDE DE L'ÉTAT ---
+// Helper pour l'échappement HTML
+window.escapeHtml = window.escapeHtml || function(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+};
+
+// --- SAUVEGARDE DE L'ÉTAT ---
 function saveFilterState() {
     const state = {
         searchTerm: document.getElementById('searchInput')?.value || "",
         selectedTags: selectedTags,
-        // On sauvegarde les IDs des dossiers décochés (plus simple)
         uncheckedFolders: Array.from(document.querySelectorAll('.folder-select-checkbox:not(:checked)'))
                                .map(cb => cb.getAttribute('data-folder'))
     };
     sessionStorage.setItem('spokeman_filter_state', JSON.stringify(state));
 }
 
+// --- GESTION DES TAGS ---
 function addSelectedTag(tag) {
+    console.log("🏷️ Tag ajouté :", tag);
     if (!selectedTags.includes(tag)) {
         selectedTags.push(tag);
         updateSelectedTagsDisplay();
         filterFiles();
-        console.log("Tag ajouté au filtre:", tag);
     }
 }
 
 function removeSelectedTag(tag) {
+    console.log("🏷️ Tag retiré :", tag);
     selectedTags = selectedTags.filter(t => t !== tag);
     updateSelectedTagsDisplay();
     filterFiles();
-    console.log("Tag retiré du filtre:", tag);
 }
 
 function updateSelectedTagsDisplay() {
@@ -53,7 +64,7 @@ function updateSelectedTagsDisplay() {
     }).join('');
     
     document.querySelectorAll('.remove-tag-btn').forEach(btn => {
-        btn.addEventListener('click', handleRemoveTag);
+        btn.onclick = handleRemoveTag;
     });
 }
 
@@ -63,36 +74,49 @@ function handleRemoveTag(e) {
     removeSelectedTag(tag);
 }
 
-function filterFiles() {
-    const input = document.getElementById('searchInput');
-    const clearBtn = document.getElementById('clearSearchBtn');
-    if (!input) return;
+// --- COLLAPSE MANUEL (Logique de clic sur dossier) ---
+function toggleFolderCollapse(id, event) {
+    console.log("🖱️ CLIC détecté sur le bandeau dossier !");
+    console.log("ID cible transmis par PHP :", id);
     
-    let searchTerm = input.value.toLowerCase().trim();
-    if (clearBtn) clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
+    const el = document.getElementById(id);
     
-    // On lance la sauvegarde à chaque filtrage
-    saveFilterState();
+    if (!el) {
+        console.error("❌ ERREUR : L'élément avec l'ID '" + id + "' est introuvable dans la page.");
+        return;
+    }
 
+    if (typeof bootstrap === 'undefined') {
+        console.error("❌ ERREUR : Bootstrap JS (bootstrap.bundle.min.js) n'est pas détecté.");
+        return;
+    }
+
+    try {
+        console.log("🔄 Exécution du Toggle Bootstrap sur :", el);
+        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(el);
+        bsCollapse.toggle();
+    } catch (err) {
+        console.error("❌ ERREUR Bootstrap Collapse :", err);
+    }
+}
+
+// --- FONCTION DE FILTRAGE PRINCIPALE ---
+function filterFiles() {
+    console.log("🔍 Filtrage en cours...");
+    const input = document.getElementById('searchInput');
+    let searchTerm = input ? input.value.toLowerCase().trim() : "";
+    const isSearching = searchTerm !== "" || selectedTags.length > 0;
     let hasVisibleRows = false;
-    
+
     document.querySelectorAll('.folder-block').forEach(block => {
+        const rows = block.querySelectorAll('.file-item-row');
+        const collapseEl = block.querySelector('.collapse');
         const folderCheckbox = block.querySelector('.folder-select-checkbox');
         const isChecked = folderCheckbox ? folderCheckbox.checked : true;
-        const fileList = block.querySelector('.file-list');
         
-        if (!isChecked) {
-            if (fileList) fileList.style.display = 'none';
-            block.style.opacity = '0.6';
-            block.style.background = '#fafafa';
-        } else {
-            if (fileList) fileList.style.display = '';
-            block.style.opacity = '1';
-            block.style.background = '';
-            
-            const rows = block.querySelectorAll('.file-item-row');
-            let hasVisibleInBlock = false;
-            
+        let hasVisibleInBlock = false;
+
+        if (isChecked) {
             rows.forEach(row => {
                 const fileName = row.getAttribute('data-filename')?.toLowerCase() || "";
                 const fileTagsAttr = row.getAttribute('data-tags') || "";
@@ -109,41 +133,74 @@ function filterFiles() {
                 row.style.display = isMatch ? "" : "none";
                 if (isMatch) hasVisibleInBlock = true;
             });
-            
-            if (hasVisibleInBlock) hasVisibleRows = true;
+        }
+
+        if (hasVisibleInBlock) hasVisibleRows = true;
+
+        // LOGIQUE DE COLLAPSE AUTO
+        if (collapseEl && isSearching) {
+            const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
+            if (hasVisibleInBlock) {
+                bsCollapse.show();
+            } else {
+                bsCollapse.hide();
+            }
         }
     });
 
-    // Gestion du message "Aucun résultat"
-    const noResultsDiv = document.getElementById('noSearchResults');
-    if (!hasVisibleRows && (selectedTags.length > 0 || searchTerm !== "")) {
-        const message = `Aucun résultat pour votre recherche dans les dossiers sélectionnés.`;
-        if (!noResultsDiv) {
-            const mainCol = document.querySelector('.col-lg-9');
-            const div = document.createElement('div');
-            div.id = 'noSearchResults';
-            div.className = 'alert alert-info text-center mt-3';
-            div.innerHTML = message;
-            mainCol?.appendChild(div);
-        } else {
-            noResultsDiv.style.display = 'block';
-            noResultsDiv.innerHTML = message;
-        }
-    } else if (noResultsDiv) {
-        noResultsDiv.style.display = 'none';
-    }
+    saveFilterState();
 }
 
 function clearSearch() {
+    console.log("🧹 Clear search...");
     selectedTags = [];
     const input = document.getElementById('searchInput');
     if (input) input.value = '';
-    sessionStorage.removeItem('spokeman_filter_state'); // On nettoie le cache
+    sessionStorage.removeItem('spokeman_filter_state');
     updateSelectedTagsDisplay();
     filterFiles();
 }
 
+// --- INITIALISATION AU CHARGEMENT ---
+window.addEventListener('load', () => {
+    console.log("🏁 Initialisation des collapses...");
+    
+    const collapses = document.querySelectorAll('.collapse');
+    
+    // Récupérer les dossiers qui étaient ouverts avant le refresh
+    const savedOpened = sessionStorage.getItem('spokeman_opened_folders');
+    const openedIds = savedOpened ? JSON.parse(savedOpened) : [];
+
+    collapses.forEach((el) => {
+        try {
+            // Si l'ID du dossier est dans notre liste sauvegardée, on l'affiche
+            // Sinon, on le cache par défaut
+            const shouldBeOpen = openedIds.includes(el.id);
+            
+            const bsCollapse = new bootstrap.Collapse(el, { 
+                toggle: false 
+            });
+
+            if (shouldBeOpen) {
+                bsCollapse.show();
+            } else {
+                bsCollapse.hide();
+            }
+        } catch (e) {
+            console.error("Échec initialisation dossier :", e);
+        }
+    });
+
+    // Une fois restauré, on peut nettoyer le storage pour ne pas 
+    // polluer les navigations futures (optionnel)
+    sessionStorage.removeItem('spokeman_opened_folders');
+});
+
+// Exposition globale
 window.addSelectedTag = addSelectedTag;
 window.removeSelectedTag = removeSelectedTag;
 window.filterFiles = filterFiles;
 window.clearSearch = clearSearch;
+window.toggleFolderCollapse = toggleFolderCollapse;
+
+console.log("✅ admin-filters.js : Prêt.");

@@ -13,14 +13,21 @@
             previewModal = new bootstrap.Modal(modalElement);
             
             modalElement.addEventListener('hidden.bs.modal', function () {
-                // SAUVEGARDE DU SCROLL
+                // 1. SAUVEGARDE DU SCROLL
                 sessionStorage.setItem('spokeman_scroll_pos', window.scrollY);
                 
-                console.log("Fermeture modale : refresh...");
+                // 2. SAUVEGARDE DES DOSSIERS OUVERTS
+                const openedFolders = [];
+                document.querySelectorAll('.collapse.show').forEach(el => {
+                    openedFolders.push(el.id);
+                });
+                sessionStorage.setItem('spokeman_opened_folders', JSON.stringify(openedFolders));
+                
+                console.log("Fermeture modale : sauvegarde état et refresh...");
                 window.location.reload();
             });
 
-            console.log("Modale initialisée avec auto-refresh et mémoire de scroll");
+            console.log("Modale initialisée");
             return true;
         }
         return false;

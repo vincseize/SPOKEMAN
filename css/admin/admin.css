@@ -34,6 +34,20 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
+    transition: background 0.2s;
+    padding: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.folder-title:hover {
+    background-color: rgba(0,0,0,0.03);
+}
+
+/* Empêche le curseur main sur les inputs et boutons à l'intérieur */
+.folder-title input, 
+.folder-title button {
+    cursor: auto;
 }
 
 .folder-title .btn-link {
