@@ -113,8 +113,11 @@ include_once 'admin-header.php';
                 $files = array_diff($files, array('.', '..'));
             ?>
             <div class="folder-block mb-4">
+                <!-- En-tête avec data-bs-toggle au lieu de onclick -->
                 <div class="folder-title d-flex justify-content-between align-items-center" 
-                    onclick="toggleFolderCollapse('<?= $folderId ?>', event)" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#<?= $folderId ?>" 
+                    aria-expanded="false"
                     style="cursor: pointer; padding: 10px; background: #eee; border-radius: 5px 5px 0 0;">
                     
                     <div class="d-flex align-items-center gap-2">
@@ -139,6 +142,7 @@ include_once 'admin-header.php';
                     </div>
                 </div>
 
+                <!-- Contenu du dossier -->
                 <div id="<?= $folderId ?>" class="collapse file-list" style="padding-left: 34px; border: 1px solid #eee; border-top: none; background: #fff;">
                     <?php foreach ($files as $file): 
                         $path = $folder . '/' . $file;

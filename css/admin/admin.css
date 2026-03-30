@@ -35,7 +35,6 @@
     justify-content: space-between;
     align-items: center;
     transition: background 0.2s;
-    padding: 10px;
     border-radius: 8px;
     cursor: pointer;
 }
@@ -219,27 +218,39 @@
 }
 
 /* ==========================================================================
-   SELECTED TAGS (badges de filtrage)
+   SELECTED TAGS (badges de filtrage avec couleurs)
    ========================================================================== */
 #selectedTagsContainer {
     min-height: 40px;
     margin-bottom: 8px;
 }
 
-.selected-tag {
+.selected-tag-badge {
+    background: var(--primary);
+    color: white;
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
     transition: all 0.2s ease;
 }
 
-.selected-tag:hover {
-    transform: scale(1.02);
+.selected-tag-badge:hover {
+    transform: translateY(-1px);
+    filter: brightness(0.95);
 }
 
-.remove-tag-btn {
+.selected-tag-badge span {
+    cursor: pointer;
+    font-size: 0.8rem;
+    opacity: 0.7;
     transition: opacity 0.2s;
 }
 
-.remove-tag-btn:hover {
-    opacity: 0.8;
+.selected-tag-badge span:hover {
+    opacity: 1;
 }
 
 /* ==========================================================================
@@ -263,6 +274,19 @@
     .rename-input {
         min-width: 120px;
     }
+}
+
+/* ==========================================================================
+   FICHIERS DANS DOSSIER DÉSÉLECTIONNÉ
+   ========================================================================== */
+.folder-block .file-item-row[style*="display: none"] {
+    /* Les fichiers cachés restent invisibles */
+}
+
+/* Effet visuel pour le dossier désélectionné */
+.folder-block:has(.folder-select-checkbox:not(:checked)) .folder-title {
+    opacity: 0.6;
+    background-color: #f0f0f0;
 }
 
 /* ==========================================================================
