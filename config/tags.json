@@ -1,8 +1,4 @@
 {
-    "tag_2366f2ed": {
-        "name": "lapin",
-        "color": "#27436d"
-    },
     "tag_65f1a2": {
         "name": "menace",
         "color": "#0d6efd"
@@ -10,5 +6,9 @@
     "tag_65f1b5": {
         "name": "menottes",
         "color": "#dc3545"
+    },
+    "tag_75f1a6a9": {
+        "name": "titou",
+        "color": "#296f1b"
     }
 }

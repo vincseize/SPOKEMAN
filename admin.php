@@ -244,7 +244,7 @@ include_once 'admin-header.php';
 <script src="js/admin/admin-rename.js?<?= time() ?>"></script>
 <script src="js/admin/admin-tags.js?<?= time() ?>"></script>
 <script src="js/admin/admin-filters.js?<?= time() ?>"></script>
-<script src="js/admin-modal.js?<?= time() ?>"></script>
+<script src="js/admin/admin-modal.js?<?= time() ?>"></script>
 <script src="js/admin/admin.js?<?= time() ?>"></script>
 
 </body>
