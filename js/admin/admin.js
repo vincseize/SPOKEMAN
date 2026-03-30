@@ -192,3 +192,44 @@ document.addEventListener('DOMContentLoaded', function() {
         }, 100);
     }
 });
+
+document.addEventListener('DOMContentLoaded', function() {
+    const savedState = sessionStorage.getItem('spokeman_filter_state');
+    const searchInput = document.getElementById('searchInput');
+    
+    if (savedState) {
+        const state = JSON.parse(savedState);
+        
+        // 1. Restaurer le texte de recherche
+        if (searchInput && state.searchTerm) {
+            searchInput.value = state.searchTerm;
+        }
+        
+        // 2. Restaurer les tags sélectionnés
+        if (state.selectedTags) {
+            window.selectedTags = state.selectedTags; // On met à jour la variable globale
+            if (typeof updateSelectedTagsDisplay === 'function') updateSelectedTagsDisplay();
+        }
+        
+        // 3. Restaurer les dossiers décochés
+        if (state.uncheckedFolders) {
+            document.querySelectorAll('.folder-select-checkbox').forEach(cb => {
+                if (state.uncheckedFolders.includes(cb.getAttribute('data-folder'))) {
+                    cb.checked = false;
+                }
+            });
+        }
+        
+        // 4. Appliquer le filtre
+        setTimeout(() => {
+            if (typeof filterFiles === 'function') filterFiles();
+        }, 100);
+    }
+    
+    // --- GESTION DU SCROLL ---
+    const savedScroll = sessionStorage.getItem('spokeman_scroll_pos');
+    if (savedScroll) {
+        window.scrollTo(0, parseInt(savedScroll));
+        sessionStorage.removeItem('spokeman_scroll_pos');
+    }
+});

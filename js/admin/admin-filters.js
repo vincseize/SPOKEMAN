@@ -1,28 +1,35 @@
-// js/admin-filters.js
 console.log("admin-filters.js chargé");
 
-// Variables pour stocker les tags sélectionnés (filtrage uniquement)
 let selectedTags = [];
 
-// AJOUTER UN TAG AU FILTRAGE
+// --- NOUVEAU : SAUVEGARDE DE L'ÉTAT ---
+function saveFilterState() {
+    const state = {
+        searchTerm: document.getElementById('searchInput')?.value || "",
+        selectedTags: selectedTags,
+        // On sauvegarde les IDs des dossiers décochés (plus simple)
+        uncheckedFolders: Array.from(document.querySelectorAll('.folder-select-checkbox:not(:checked)'))
+                               .map(cb => cb.getAttribute('data-folder'))
+    };
+    sessionStorage.setItem('spokeman_filter_state', JSON.stringify(state));
+}
+
 function addSelectedTag(tag) {
     if (!selectedTags.includes(tag)) {
         selectedTags.push(tag);
         updateSelectedTagsDisplay();
         filterFiles();
-        console.log("Tag ajouté au filtre:", tag, "Tags actifs:", selectedTags);
+        console.log("Tag ajouté au filtre:", tag);
     }
 }
 
-// SUPPRIMER UN TAG DU FILTRAGE
 function removeSelectedTag(tag) {
     selectedTags = selectedTags.filter(t => t !== tag);
     updateSelectedTagsDisplay();
     filterFiles();
-    console.log("Tag retiré du filtre:", tag, "Tags actifs:", selectedTags);
+    console.log("Tag retiré du filtre:", tag);
 }
 
-// METTRE À JOUR L'AFFICHAGE DES BADGES DE FILTRAGE
 function updateSelectedTagsDisplay() {
     const container = document.getElementById('selectedTagsContainer');
     if (!container) return;
@@ -46,7 +53,6 @@ function updateSelectedTagsDisplay() {
     }).join('');
     
     document.querySelectorAll('.remove-tag-btn').forEach(btn => {
-        btn.removeEventListener('click', handleRemoveTag);
         btn.addEventListener('click', handleRemoveTag);
     });
 }
@@ -57,75 +63,45 @@ function handleRemoveTag(e) {
     removeSelectedTag(tag);
 }
 
-// js/admin-filters.js - Version corrigée
 function filterFiles() {
     const input = document.getElementById('searchInput');
     const clearBtn = document.getElementById('clearSearchBtn');
     if (!input) return;
     
     let searchTerm = input.value.toLowerCase().trim();
+    if (clearBtn) clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
     
-    if (clearBtn) {
-        clearBtn.style.display = searchTerm.length > 0 ? 'block' : 'none';
-    }
-    
-    console.log("=== FILTRAGE ===");
-    console.log("Recherche nom:", searchTerm);
-    console.log("Tags sélectionnés:", selectedTags);
-    
+    // On lance la sauvegarde à chaque filtrage
+    saveFilterState();
+
     let hasVisibleRows = false;
-    
-    // Récupérer les dossiers cochés
-    const checkedFolders = new Set();
-    document.querySelectorAll('.folder-select-checkbox:checked').forEach(cb => {
-        const folderPath = cb.getAttribute('data-folder');
-        if (folderPath) {
-            checkedFolders.add(folderPath);
-        }
-    });
-    
-    console.log("Dossiers cochés:", Array.from(checkedFolders));
     
     document.querySelectorAll('.folder-block').forEach(block => {
         const folderCheckbox = block.querySelector('.folder-select-checkbox');
-        const folderPath = folderCheckbox ? folderCheckbox.getAttribute('data-folder') : null;
         const isChecked = folderCheckbox ? folderCheckbox.checked : true;
         const fileList = block.querySelector('.file-list');
         
-        console.log(`Dossier: ${folderPath}, coché: ${isChecked}`);
-        
         if (!isChecked) {
-            // Dossier décoché : cacher toute la liste des fichiers
-            if (fileList) {
-                fileList.style.display = 'none';
-            }
+            if (fileList) fileList.style.display = 'none';
             block.style.opacity = '0.6';
             block.style.background = '#fafafa';
-            block.style.display = "block";
         } else {
-            // Dossier coché : afficher la liste des fichiers
-            if (fileList) {
-                fileList.style.display = '';
-            }
+            if (fileList) fileList.style.display = '';
             block.style.opacity = '1';
             block.style.background = '';
-            block.style.display = "block";
             
-            // Filtrer les fichiers dans ce dossier
             const rows = block.querySelectorAll('.file-item-row');
             let hasVisibleInBlock = false;
             
             rows.forEach(row => {
                 const fileName = row.getAttribute('data-filename')?.toLowerCase() || "";
                 const fileTagsAttr = row.getAttribute('data-tags') || "";
-                const fileTagsArray = fileTagsAttr.trim() === "" ? [] : fileTagsAttr.split(/\s+/);
+                const fileTagsArray = fileTagsAttr.split(/\s+/).filter(t => t !== "");
                 
                 let isMatch = true;
-                
                 if (selectedTags.length > 0) {
-                    isMatch = selectedTags.every(tag => fileTagsArray.includes(tag));
+                    isMatch = selectedTags.every(tag => fileTagsArray.includes(tag.toLowerCase()));
                 }
-                
                 if (isMatch && searchTerm !== "") {
                     isMatch = fileName.includes(searchTerm);
                 }
@@ -137,20 +113,11 @@ function filterFiles() {
             if (hasVisibleInBlock) hasVisibleRows = true;
         }
     });
-    
-    console.log("Fichiers visibles:", hasVisibleRows);
-    
+
+    // Gestion du message "Aucun résultat"
     const noResultsDiv = document.getElementById('noSearchResults');
     if (!hasVisibleRows && (selectedTags.length > 0 || searchTerm !== "")) {
-        let message = "";
-        if (selectedTags.length > 0 && searchTerm !== "") {
-            message = `Aucun résultat pour les tags [${selectedTags.map(t => "#"+t).join(", ")}] et le nom "${searchTerm}" dans les dossiers sélectionnés`;
-        } else if (selectedTags.length > 0) {
-            message = `Aucun résultat pour les tags [${selectedTags.map(t => "#"+t).join(", ")}] dans les dossiers sélectionnés`;
-        } else {
-            message = `Aucun résultat pour "${searchTerm}" dans les dossiers sélectionnés`;
-        }
-        
+        const message = `Aucun résultat pour votre recherche dans les dossiers sélectionnés.`;
         if (!noResultsDiv) {
             const mainCol = document.querySelector('.col-lg-9');
             const div = document.createElement('div');
@@ -167,20 +134,15 @@ function filterFiles() {
     }
 }
 
-// EFFACER LA RECHERCHE (nom et tags)
 function clearSearch() {
     selectedTags = [];
-    updateSelectedTagsDisplay();
     const input = document.getElementById('searchInput');
-    if (input) {
-        input.value = '';
-        filterFiles();
-        input.focus();
-    }
-    console.log("Recherche effacée");
+    if (input) input.value = '';
+    sessionStorage.removeItem('spokeman_filter_state'); // On nettoie le cache
+    updateSelectedTagsDisplay();
+    filterFiles();
 }
 
-// Exposer
 window.addSelectedTag = addSelectedTag;
 window.removeSelectedTag = removeSelectedTag;
 window.filterFiles = filterFiles;

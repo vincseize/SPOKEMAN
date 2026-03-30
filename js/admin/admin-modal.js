@@ -12,18 +12,17 @@
         if (modalElement && typeof bootstrap !== 'undefined') {
             previewModal = new bootstrap.Modal(modalElement);
             
-            // --- AJOUT DE L'OPTION 1 ---
-            // On écoute la fermeture complète de la modale
             modalElement.addEventListener('hidden.bs.modal', function () {
-                console.log("Fermeture modale : rafraîchissement pour synchronisation...");
+                // SAUVEGARDE DU SCROLL
+                sessionStorage.setItem('spokeman_scroll_pos', window.scrollY);
+                
+                console.log("Fermeture modale : refresh...");
                 window.location.reload();
             });
-            // ---------------------------
 
-            console.log("Modale initialisée avec auto-refresh");
+            console.log("Modale initialisée avec auto-refresh et mémoire de scroll");
             return true;
         }
-        console.log("Modale non initialisée - élément ou Bootstrap manquant");
         return false;
     }
 
