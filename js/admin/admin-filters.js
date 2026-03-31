@@ -44,7 +44,7 @@ function restoreAccordionStateOnLoad() {
     }
 }
 
-// --- FERMER TOUS LES DOSSIERS (utilisé uniquement à l'initialisation) ---
+// --- FERMER TOUS LES DOSSIERS ---
 function closeAllFolders() {
     document.querySelectorAll('.collapse').forEach(el => {
         const bsCollapse = bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
@@ -52,13 +52,43 @@ function closeAllFolders() {
     });
 }
 
-// --- OUVRIR UN DOSSIER ---
-function openFolder(folderId) {
-    const el = document.getElementById(folderId);
-    if (el) {
-        const bsCollapse = bootstrap.Collapse.getOrCreateInstance(el, { toggle: false });
-        bsCollapse.show();
+// --- METTRE À JOUR L'AFFICHAGE DU BOUTON CLEAR ---
+function updateClearButtonVisibility() {
+    const searchInput = document.getElementById('searchInput');
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn && searchInput) {
+        const hasSearch = searchInput.value.trim() !== '';
+        const hasTags = selectedTags.length > 0;
+        clearBtn.style.display = (hasSearch || hasTags) ? 'block' : 'none';
     }
+}
+
+// --- EFFACER TOUTE LA RECHERCHE ---
+function clearSearch() {
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) {
+        searchInput.value = '';
+    }
+    
+    selectedTags = [];
+    updateSelectedTagsDisplay();
+    
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        clearBtn.style.display = 'none';
+    }
+    
+    document.querySelectorAll('.folder-block').forEach(block => {
+        block.style.display = 'block';
+    });
+    
+    document.querySelectorAll('.file-item-row').forEach(row => {
+        row.style.display = '';
+        row.style.opacity = '1';
+    });
+    
+    saveFilterState();
+    closeAllFolders();
 }
 
 // --- FILTRAGE ---
@@ -67,7 +97,6 @@ function filterFiles() {
     const searchTerm = input ? input.value.toLowerCase().trim() : "";
     const isSearching = searchTerm !== "" || selectedTags.length > 0;
 
-    // Appliquer les filtres sur chaque ligne
     document.querySelectorAll('.folder-block').forEach(block => {
         const rows = block.querySelectorAll('.file-item-row');
         const folderCheckbox = block.querySelector('.folder-select-checkbox');
@@ -76,7 +105,6 @@ function filterFiles() {
         
         let hasVisibleInBlock = false;
 
-        // Filtrage des lignes
         rows.forEach(row => {
             const fileName = row.getAttribute('data-filename')?.toLowerCase() || "";
             const fileTags = (row.getAttribute('data-tags') || "").toLowerCase();
@@ -86,7 +114,6 @@ function filterFiles() {
             
             const isMatch = matchTags && matchSearch;
             
-            // Si dossier décoché, on cache les fichiers mais on garde le dossier visible
             if (!isChecked) {
                 row.style.display = "none";
                 row.style.opacity = "0.5";
@@ -97,20 +124,15 @@ function filterFiles() {
             }
         });
 
-        // Gestion de l'affichage du bloc dossier
         if (isSearching) {
-            // Pendant une recherche : cacher les dossiers sans résultats
             block.style.display = hasVisibleInBlock ? "block" : "none";
         } else {
-            // Pas de recherche : tout afficher
             block.style.display = "block";
         }
         
-        // Si le dossier a des résultats et qu'une recherche est active, l'ouvrir
         if (isSearching && hasVisibleInBlock && collapseEl) {
             const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
             bsCollapse.show();
-            // Réinitialiser les boutons + Tag après ouverture du dossier
             setTimeout(() => {
                 if (typeof window.initAddTagButtons === 'function') {
                     window.initAddTagButtons();
@@ -119,18 +141,17 @@ function filterFiles() {
         }
     });
     
-    // Sauvegarder l'état des filtres
     if (isSearching) {
         saveFilterState();
     }
+    
+    updateClearButtonVisibility();
 }
 
 // --- INITIALISATION ---
 window.addEventListener('load', () => {
-    // 1. Fermer tous les dossiers au chargement
     closeAllFolders();
     
-    // 2. Restaurer l'état des filtres
     const saved = sessionStorage.getItem('spokeman_filter_state');
     if (saved) {
         const state = JSON.parse(saved);
@@ -139,24 +160,32 @@ window.addEventListener('load', () => {
         updateSelectedTagsDisplay();
     }
     
-    // 3. Restaurer l'état des accordéons (uniquement si pas de recherche active)
     const hasActiveSearch = document.getElementById('searchInput')?.value !== "" || selectedTags.length > 0;
     
     if (!hasActiveSearch) {
         restoreAccordionStateOnLoad();
     }
     
-    // 4. Appliquer le filtre si nécessaire
     if (hasActiveSearch) {
         filterFiles();
     }
     
-    // 5. Initialiser les boutons + Tag après chargement
     setTimeout(() => {
         if (typeof window.initAddTagButtons === 'function') {
             window.initAddTagButtons();
         }
     }, 200);
+    
+    // Bouton clear search
+    const clearBtn = document.getElementById('clearSearchBtn');
+    if (clearBtn) {
+        clearBtn.onclick = (e) => {
+            e.stopPropagation();
+            clearSearch();
+        };
+    }
+    
+    updateClearButtonVisibility();
 });
 
 // Fonctions globales
@@ -165,6 +194,7 @@ window.addSelectedTag = function(tag) {
         selectedTags.push(tag);
         updateSelectedTagsDisplay();
         filterFiles();
+        updateClearButtonVisibility();
     }
 };
 
@@ -172,9 +202,9 @@ window.removeSelectedTag = function(tag) {
     selectedTags = selectedTags.filter(t => t !== tag);
     updateSelectedTagsDisplay();
     filterFiles();
+    updateClearButtonVisibility();
 };
 
-// Mise à jour de l'affichage des tags sélectionnés avec couleurs
 function updateSelectedTagsDisplay() {
     const container = document.getElementById('selectedTagsContainer');
     if (!container) return;
@@ -195,7 +225,6 @@ function updateSelectedTagsDisplay() {
     }).join('');
 }
 
-// Escape HTML
 function escapeHtml(str) {
     if (!str) return '';
     const div = document.createElement('div');
@@ -205,3 +234,4 @@ function escapeHtml(str) {
 
 window.filterFiles = filterFiles;
 window.saveOpenedFoldersState = saveOpenedFoldersState;
+window.clearSearch = clearSearch;

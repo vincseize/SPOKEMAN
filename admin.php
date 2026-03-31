@@ -29,8 +29,7 @@ include_once 'admin-header.php';
                        onkeyup="filterFiles()">
                 <span class="position-absolute start-0 top-50 translate-middle-y ms-2 text-muted" style="font-size: 0.8rem;">🔍</span>
                 <button type="button" id="clearSearchBtn" class="btn btn-sm position-absolute end-0 top-50 translate-middle-y me-1 p-0" 
-                        style="display: none; background: none; border: none; color: #aaa; font-size: 0.8rem; cursor: pointer;"
-                        onclick="clearSearch()">
+                        style="display: none; background: none; border: none; color: #aaa; font-size: 0.8rem; cursor: pointer;">
                     ✕
                 </button>
             </div>

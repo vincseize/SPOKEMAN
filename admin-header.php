@@ -41,6 +41,15 @@ function cleanName($name) {
     return trim(preg_replace('/[^a-zA-Z0-9._\- ]/', '', str_replace($search, $replace, $name)));
 }
 
+// --- ROUTE AJAX POUR RÉCUPÉRER LES TAGS D'UN FICHIER ---
+if (isset($_GET['get_tags_for']) && !empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+    $filePath = $_GET['get_tags_for'];
+    $tags = $mediaTags[$filePath] ?? [];
+    header('Content-Type: application/json');
+    echo json_encode(['tags' => $tags]);
+    exit;
+}
+
 // --- LOGIQUE POST ---
 if (isset($_POST['rename_folder']) && !empty($_POST['new_folder_name'])) {
     $newName = cleanName($_POST['new_folder_name']);
@@ -53,7 +62,7 @@ if (isset($_POST['rename_folder']) && !empty($_POST['new_folder_name'])) {
             $newK = (strpos($path, $oldPath) === 0) ? str_replace($oldPath, $newPath, $path) : $path;
             $updatedMediaTags[$newK] = $t;
         }
-        file_put_contents($mediaTagsFile, json_encode($updatedMediaTags, JSON_UNESCAPED_UNICODE));
+        file_put_contents($mediaTagsFile, json_encode($updatedMediaTags, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
     header("Location: admin.php"); exit;
 }
@@ -68,7 +77,7 @@ if (isset($_POST['rename_file']) && !empty($_POST['new_name'])) {
             if (isset($mediaTags[$oldPath])) {
                 $mediaTags[$newPath] = $mediaTags[$oldPath];
                 unset($mediaTags[$oldPath]);
-                file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE));
+                file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
             }
         }
     }
@@ -114,8 +123,14 @@ if (isset($_POST['update_media_tags'])) {
         $mediaTags[$filePath] = $selectedTags;
     }
     
-    file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE));
-    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) exit;
+    file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    
+    // Réponse JSON pour les requêtes AJAX
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true, 'tags' => $selectedTags]);
+        exit;
+    }
     header("Location: admin.php"); exit;
 }
 
@@ -123,7 +138,13 @@ if (isset($_POST['delete_file'])) {
     if (file_exists($_POST['file_path'])) {
         unlink($_POST['file_path']);
         unset($mediaTags[$_POST['file_path']]);
-        file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE));
+        file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
+    }
+    
+    if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit;
     }
     header("Location: admin.php"); exit;
 }
@@ -135,7 +156,7 @@ if (isset($_POST['force_delete_folder'])) {
         foreach($files as $f) { $f->isDir() ? rmdir($f->getRealPath()) : unlink($f->getRealPath()); }
         rmdir($path);
         $mediaTags = array_filter($mediaTags, function($k) { return file_exists($k); }, ARRAY_FILTER_USE_KEY);
-        file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE));
+        file_put_contents($mediaTagsFile, json_encode($mediaTags, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT));
     }
     header("Location: admin.php"); exit;
 }

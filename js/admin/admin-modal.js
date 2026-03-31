@@ -260,7 +260,7 @@ function showTagSelector() {
     modal.show();
 }
 
-// AJOUTER UN TAG AU FICHIER COURANT
+// AJOUTER UN TAG AU FICHIER COURANT (dans admin-modal.js)
 function addTagToCurrentFile(tagName) {
     if (!currentFilePath) return;
     
@@ -274,25 +274,20 @@ function addTagToCurrentFile(tagName) {
         body: formData,
         headers: { 'X-Requested-With': 'XMLHttpRequest' }
     })
-    .then(response => {
-        if (response.ok) {
-            // Mettre à jour les tags dans la galerie
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mettre à jour les tags dans la galerie locale
             const currentItem = currentGallery[currentIndex];
             if (currentItem) {
                 const updatedTags = [...currentItem.tags, tagName];
                 currentItem.tags = updatedTags;
+                
+                // Mettre à jour l'affichage des tags dans la modale
                 displayModalTags(currentFilePath, updatedTags);
                 
-                // Mettre à jour l'attribut data-tags dans la carte
-                const card = document.querySelector(`.file-item-row[data-path="${currentFilePath}"]`);
-                if (card) {
-                    card.setAttribute('data-tags', updatedTags.join(' ').toLowerCase());
-                    // Mettre à jour l'affichage des tags dans la ligne
-                    const tagsContainer = card.querySelector('.d-flex.flex-wrap.gap-1.mt-1');
-                    if (tagsContainer && window.updateRowTagsDisplay) {
-                        window.updateRowTagsDisplay(card, updatedTags);
-                    }
-                }
+                // Mettre à jour la ligne dans la liste
+                updateFileRowTags(currentFilePath, updatedTags);
             }
             
             // Fermer la modale de sélection
@@ -301,6 +296,47 @@ function addTagToCurrentFile(tagName) {
         }
     })
     .catch(err => console.error('Erreur ajout tag:', err));
+}
+
+// Fonction pour mettre à jour l'affichage des tags dans la ligne du fichier
+function updateFileRowTags(filePath, tags) {
+    const card = document.querySelector(`.file-item-row[data-path="${filePath}"]`);
+    if (!card) return;
+    
+    // Mettre à jour l'attribut data-tags
+    card.setAttribute('data-tags', tags.join(' ').toLowerCase());
+    
+    // Mettre à jour l'affichage des tags dans la ligne
+    const tagsContainer = card.querySelector('.d-flex.flex-wrap.gap-1.mt-1');
+    if (tagsContainer) {
+        if (tags.length === 0) {
+            tagsContainer.innerHTML = `
+                <span class="text-muted small">Aucun tag</span>
+                <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="${filePath}" style="font-size: 0.6rem; padding: 2px 6px;">+ Tag</button>
+            `;
+        } else {
+            const tagsHtml = tags.map(tag => {
+                const tagColor = window.tagColors ? (window.tagColors[tag] || '#6c757d') : '#6c757d';
+                return `
+                    <div class="tag-item" style="background: ${tagColor}; color: white; font-size: 0.65rem; padding: 2px 6px 2px 8px; border-radius: 4px; display: inline-flex; align-items: center;">
+                        <span>#${escapeHtml(tag)}</span>
+                        <button type="button" class="btn-remove-tag-row" data-path="${filePath}" data-tag="${escapeHtml(tag)}" 
+                                style="background: none; border: none; color: white; cursor: pointer; font-size: 0.7rem; padding: 0 0 0 4px;">✕</button>
+                    </div>
+                `;
+            }).join('');
+            
+            tagsContainer.innerHTML = `
+                ${tagsHtml}
+                <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="${filePath}" style="font-size: 0.6rem; padding: 2px 6px;">+ Tag</button>
+            `;
+        }
+        
+        // Réattacher les événements
+        if (typeof window.initAddTagButtons === 'function') {
+            window.initAddTagButtons();
+        }
+    }
 }
 
 // NAVIGATION

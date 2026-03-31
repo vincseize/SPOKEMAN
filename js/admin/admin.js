@@ -62,9 +62,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
     
     // === INITIALISER LES BOUTONS + TAG ===
-    if (typeof window.initAddTagButtons === 'function') {
-        window.initAddTagButtons();
-    }
+    initAddTagButtons();
 });
 
 // Fonction pour initialiser les boutons + Tag (appelée aussi après ouverture de dossier)
@@ -73,13 +71,17 @@ function initAddTagButtons() {
         btn.removeEventListener('click', handleAddTagClick);
         btn.addEventListener('click', handleAddTagClick);
     });
+    console.log("Boutons + Tag initialisés:", document.querySelectorAll('.btn-add-tag-row').length);
 }
 
 function handleAddTagClick(e) {
     e.stopPropagation();
     const path = this.getAttribute('data-path');
+    console.log("Clic sur + Tag pour:", path);
     if (path && window.showTagSelectorForRow) {
         window.showTagSelectorForRow(path);
+    } else {
+        console.error("showTagSelectorForRow non disponible");
     }
 }
 
