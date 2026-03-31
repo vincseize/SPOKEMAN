@@ -110,6 +110,12 @@ function filterFiles() {
         if (isSearching && hasVisibleInBlock && collapseEl) {
             const bsCollapse = bootstrap.Collapse.getOrCreateInstance(collapseEl, { toggle: false });
             bsCollapse.show();
+            // Réinitialiser les boutons + Tag après ouverture du dossier
+            setTimeout(() => {
+                if (typeof window.initAddTagButtons === 'function') {
+                    window.initAddTagButtons();
+                }
+            }, 100);
         }
     });
     
@@ -144,6 +150,13 @@ window.addEventListener('load', () => {
     if (hasActiveSearch) {
         filterFiles();
     }
+    
+    // 5. Initialiser les boutons + Tag après chargement
+    setTimeout(() => {
+        if (typeof window.initAddTagButtons === 'function') {
+            window.initAddTagButtons();
+        }
+    }, 200);
 });
 
 // Fonctions globales

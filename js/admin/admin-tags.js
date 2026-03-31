@@ -1,4 +1,4 @@
-// js/admin-tags.js
+// js/admin/admin-tags.js
 console.log("admin-tags.js chargé");
 
 // SUPPRIMER UN TAG
@@ -70,9 +70,9 @@ function showTagSelectorForRow(filePath) {
                             ${availableTags.map(tag => {
                                 const tagColor = tagColors[tag] || '#6c757d';
                                 return `<button type="button" class="btn btn-sm tag-select-btn" 
-                                        data-path="${filePath}" data-tag="${window.escapeHtml(tag)}"
+                                        data-path="${filePath}" data-tag="${window.escapeHtml ? window.escapeHtml(tag) : tag}"
                                         style="background: ${tagColor}; color: white; border: none; padding: 4px 12px; border-radius: 4px;">
-                                    #${window.escapeHtml(tag)}
+                                    #${window.escapeHtml ? window.escapeHtml(tag) : tag}
                                 </button>`;
                             }).join('')}
                         </div>

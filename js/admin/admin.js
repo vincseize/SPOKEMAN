@@ -1,4 +1,6 @@
-// js/admin.js
+// js/admin/admin.js
+console.log("admin.js chargé");
+
 document.addEventListener('DOMContentLoaded', function() {
     
     if (typeof window.initModal === 'function') window.initModal();
@@ -58,4 +60,28 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         };
     });
+    
+    // === INITIALISER LES BOUTONS + TAG ===
+    if (typeof window.initAddTagButtons === 'function') {
+        window.initAddTagButtons();
+    }
 });
+
+// Fonction pour initialiser les boutons + Tag (appelée aussi après ouverture de dossier)
+function initAddTagButtons() {
+    document.querySelectorAll('.btn-add-tag-row').forEach(btn => {
+        btn.removeEventListener('click', handleAddTagClick);
+        btn.addEventListener('click', handleAddTagClick);
+    });
+}
+
+function handleAddTagClick(e) {
+    e.stopPropagation();
+    const path = this.getAttribute('data-path');
+    if (path && window.showTagSelectorForRow) {
+        window.showTagSelectorForRow(path);
+    }
+}
+
+// Exposer la fonction globalement
+window.initAddTagButtons = initAddTagButtons;
