@@ -18,7 +18,7 @@ window.removeTagFromRow = function(filePath, tagName) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            updateFileRowTags(filePath);
+            updateFileRowTagsDisplay(filePath, data.tags);
         }
     })
     .catch(err => console.error('Erreur suppression tag:', err));
@@ -39,64 +39,52 @@ window.addTagToRow = function(filePath, tagName) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            updateFileRowTags(filePath);
+            updateFileRowTagsDisplay(filePath, data.tags);
         }
     })
     .catch(err => console.error('Erreur ajout tag:', err));
 };
 
 // METTRE À JOUR L'AFFICHAGE DES TAGS DANS UNE LIGNE
-function updateFileRowTags(filePath) {
+function updateFileRowTagsDisplay(filePath, tags) {
     const row = document.querySelector(`.file-item-row[data-path="${filePath}"]`);
     if (!row) return;
     
-    fetch(`admin.php?get_tags_for=${encodeURIComponent(filePath)}`, {
-        headers: { 'X-Requested-With': 'XMLHttpRequest' }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.tags !== undefined) {
-            const tags = data.tags;
-            row.setAttribute('data-tags', tags.join(' ').toLowerCase());
-            
-            const tagsContainer = row.querySelector('.d-flex.flex-wrap.gap-1.mt-1');
-            if (tagsContainer) {
-                if (tags.length === 0) {
-                    tagsContainer.innerHTML = `
-                        <span class="text-muted small">Aucun tag</span>
-                        <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="${filePath}" style="font-size: 0.6rem; padding: 2px 6px;">+ Tag</button>
-                    `;
-                } else {
-                    const tagsHtml = tags.map(tag => {
-                        const tagColor = window.tagColors ? (window.tagColors[tag] || '#6c757d') : '#6c757d';
-                        return `
-                            <div class="tag-item" style="background: ${tagColor}; color: white; font-size: 0.65rem; padding: 2px 6px 2px 8px; border-radius: 4px; display: inline-flex; align-items: center;">
-                                <span>#${escapeHtml(tag)}</span>
-                                <button type="button" class="btn-remove-tag-row" data-path="${filePath}" data-tag="${escapeHtml(tag)}" 
-                                        style="background: none; border: none; color: white; cursor: pointer; font-size: 0.7rem; padding: 0 0 0 4px;">✕</button>
-                            </div>
-                        `;
-                    }).join('');
-                    
-                    tagsContainer.innerHTML = `
-                        ${tagsHtml}
-                        <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="${filePath}" style="font-size: 0.6rem; padding: 2px 6px;">+ Tag</button>
-                    `;
-                }
-                
-                if (typeof window.initAddTagButtons === 'function') {
-                    window.initAddTagButtons();
-                }
-            }
-        }
-    })
-    .catch(err => console.error('Erreur chargement tags:', err));
+    row.setAttribute('data-tags', tags.join(' ').toLowerCase());
+    
+    const tagsContainer = row.querySelector('.d-flex.flex-wrap.gap-1.mt-1');
+    if (!tagsContainer) return;
+    
+    if (tags.length === 0) {
+        tagsContainer.innerHTML = `
+            <span class="text-muted small">Aucun tag</span>
+            <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="${filePath}" style="font-size: 0.6rem; padding: 2px 6px;">+ Tag</button>
+        `;
+    } else {
+        const tagsHtml = tags.map(tag => {
+            const tagColor = window.tagColors ? (window.tagColors[tag] || '#6c757d') : '#6c757d';
+            return `
+                <div class="tag-item" style="background: ${tagColor}; color: white; font-size: 0.65rem; padding: 2px 6px 2px 8px; border-radius: 4px; display: inline-flex; align-items: center;">
+                    <span>#${escapeHtml(tag)}</span>
+                    <button type="button" class="btn-remove-tag-row" data-path="${filePath}" data-tag="${escapeHtml(tag)}" 
+                            style="background: none; border: none; color: white; cursor: pointer; font-size: 0.7rem; padding: 0 0 0 4px;">✕</button>
+                </div>
+            `;
+        }).join('');
+        
+        tagsContainer.innerHTML = `
+            ${tagsHtml}
+            <button type="button" class="btn-add-tag-row btn btn-sm btn-outline-primary" data-path="${filePath}" style="font-size: 0.6rem; padding: 2px 6px;">+ Tag</button>
+        `;
+    }
+    
+    if (typeof window.initAddTagButtons === 'function') {
+        window.initAddTagButtons();
+    }
 }
 
 // AFFICHER LE SÉLECTEUR DE TAGS
 window.showTagSelectorForRow = function(filePath) {
-    console.log("showTagSelectorForRow appelé pour:", filePath);
-    
     const row = document.querySelector(`.file-item-row[data-path="${filePath}"]`);
     if (!row) {
         console.error("Ligne non trouvée pour:", filePath);

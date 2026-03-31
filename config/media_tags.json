@@ -20,7 +20,8 @@
     ],
     "uploads\/Martin_Luther\/toto.jpg": [
         "menace",
-        "titou"
+        "titou",
+        "menottes"
     ],
     "uploads\/MALCOM\/martin6.jpg": [
         "menace",
@@ -34,6 +35,9 @@
         "titou"
     ],
     "uploads\/MALCOM\/Martin9.jpeg": [
+        "titou"
+    ],
+    "uploads\/MALCOM\/Martin10.webp": [
         "titou"
     ]
 }
